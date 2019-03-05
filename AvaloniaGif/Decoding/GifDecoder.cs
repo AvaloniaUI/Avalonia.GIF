@@ -22,9 +22,6 @@ namespace AvaloniaGif.Decoding
 {
     public sealed class GifDecoder : IDisposable
     {
-        [DllImport("kernel32.dll", EntryPoint = "CopyMemory", SetLastError = false)]
-        public static unsafe extern void CopyMemory(void* dest, void* src, uint count);
-
         private static readonly ReadOnlyMemory<byte> G87AMagic
             = Encoding.ASCII.GetBytes("GIF87a").AsMemory();
 
@@ -81,11 +78,11 @@ namespace AvaloniaGif.Decoding
             ProcessFrameData();
 
             if (Header.Iterations == -1)
-                Header.RepeatCount = new GifRepeatBehavior() { Count = 1 };
+                Header.IterationCount = new GifRepeatBehavior() { Count = 1 };
             else if (Header.Iterations == 0)
-                Header.RepeatCount = new GifRepeatBehavior() { LoopForever = true };
+                Header.IterationCount = new GifRepeatBehavior() { LoopForever = true };
             else if (Header.Iterations > 0)
-                Header.RepeatCount = new GifRepeatBehavior() { Count = Header.Iterations };
+                Header.IterationCount = new GifRepeatBehavior() { Count = Header.Iterations };
 
             var pixelCount = _gifDimensions.TotalPixels;
 
@@ -417,9 +414,7 @@ namespace AvaloniaGif.Decoding
                     unsafe
                     {
                         fixed (void* src = &_bitmapBackBuffer[0])
-                        {
-                            CopyMemory(targetPointer.ToPointer(), src, (uint)_backBufferBytes);
-                        }
+                            Buffer.MemoryCopy(src,targetPointer.ToPointer(),(uint)_backBufferBytes,(uint)_backBufferBytes);
                         _hasNewFrame = false;
                     }
         }

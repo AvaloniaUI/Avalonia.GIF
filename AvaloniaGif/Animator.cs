@@ -17,9 +17,6 @@ namespace AvaloniaGif
         public GifDecoder Decoder => _decoder;
         public bool NewFrameAvailable => _decoder._hasNewFrame;
 
-
-        #region Constructor and factory methods
-
         public Animator(Stream sourceStream, Uri sourceUri, Action CurrentFrameChanged)
         {
             _sourceStream = sourceStream;
@@ -28,20 +25,15 @@ namespace AvaloniaGif
 
             _decoder = new GifDecoder(sourceStream);
             _bgWorker = new GifBackgroundWorker(_decoder);
-            _bgWorker.RepeatCount = _decoder.Header.RepeatCount;
+            _bgWorker.IterationCount = _decoder.Header.IterationCount;
             _bgWorker.SendCommand(BgWorkerCommand.Play);
             _bgWorker.CurrentFrameChanged = CurrentFrameChanged;
         }
-
-        #endregion
-
-        #region Animation
 
         public async void Play()
         {
             _bgWorker.SendCommand(BgWorkerCommand.Play);
         }
-
 
         public void Pause()
         {
@@ -62,11 +54,7 @@ namespace AvaloniaGif
         {
             get => _bgWorker.CurrentFrameIndex;
             set => _bgWorker.CurrentFrameIndex = value;
-        }
-
-        #endregion
-
-        #region Finalizer and Dispose
+        } 
 
         ~Animator()
         {
@@ -81,6 +69,7 @@ namespace AvaloniaGif
 
         private volatile bool _disposing;
         private bool _disposed;
+
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
@@ -102,8 +91,7 @@ namespace AvaloniaGif
                 _disposed = true;
             }
         }
-
-        #endregion
+ 
 
         public override string ToString()
         {
@@ -123,8 +111,8 @@ namespace AvaloniaGif
 
         public GifRepeatBehavior RepeatBehavior
         {
-            get => _bgWorker.RepeatCount;
-            set => _bgWorker.RepeatCount = value;
+            get => _bgWorker.IterationCount;
+            set => _bgWorker.IterationCount = value;
         }
     }
 }

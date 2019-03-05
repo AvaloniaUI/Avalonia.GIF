@@ -1,3 +1,9 @@
+using System;
+
+namespace AvaloniaGif.Decoding
+{
+    public class GifFrame
+    {
         public bool HasTransparency, IsInterlaced, IsLocalColorTableUsed;
         public byte TransparentColorIndex;
         public int LZWMinCodeSize, LocalColorTableSize;
@@ -7,3 +13,5 @@
         public ulong LocalColorTableCacheID;
         public bool ShouldBackup;
         public GifRect Dimensions;
+    }
+}

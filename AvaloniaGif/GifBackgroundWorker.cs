@@ -22,7 +22,7 @@ namespace AvaloniaGif
         private int _iterationCount;
 
         private GifRepeatBehavior _repeatBehavior;
-        public GifRepeatBehavior RepeatCount
+        public GifRepeatBehavior IterationCount
         {
             get => _repeatBehavior;
             set
@@ -245,7 +245,7 @@ namespace AvaloniaGif
 
         private void WaitAndRenderNext()
         {
-            if (!RepeatCount.LoopForever & _iterationCount > RepeatCount.Count)
+            if (!IterationCount.LoopForever & _iterationCount > IterationCount.Count)
             {
                 _state = BgWorkerState.Complete;
                 return;
@@ -267,7 +267,7 @@ namespace AvaloniaGif
             if (delta > targetDelay) return;
             Thread.Sleep(targetDelay - delta);
 
-            if (!RepeatCount.LoopForever & _currentIndex == 0)
+            if (!IterationCount.LoopForever & _currentIndex == 0)
                 _iterationCount++;
         }
 

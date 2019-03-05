@@ -28,5 +28,18 @@ namespace AvaloniaGif.Decoding
         {
             return !(a == b);
         }
+
+        public override bool Equals(object obj)
+        {            
+            if (obj == null || GetType() != obj.GetType())
+                return false;
+
+            return this == (GifRect)obj;
+        }
+        
+        public override int GetHashCode()
+        {
+            return X.GetHashCode() ^ Y.GetHashCode() | Width.GetHashCode() ^ Height.GetHashCode();
+        }
     }
 }

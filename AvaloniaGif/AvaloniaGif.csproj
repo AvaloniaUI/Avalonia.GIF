@@ -1,22 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
-<<<<<<< HEAD
-		<LangVersion>latest</LangVersion>
-=======
+		<TargetFramework>netcoreapp2.1</TargetFramework>
 		<LangVersion>latest</LangVersion> 
->>>>>>> 95677be... Update project dependencies and remove if-else directives.
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Update="**\*.xaml.cs">
-			<DependentUpon>%(Filename)</DependentUpon>
-		</Compile>
-		<EmbeddedResource Include="**\*.xaml">
-			<SubType>Designer</SubType>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Assets\*" />
-	</ItemGroup>
-	<ItemGroup>
-		<PackageReference Include="Avalonia" Version="*" />
+		<PackageReference Include="Avalonia" Version="0.7.1-cibuild*" />
 	</ItemGroup>
 </Project>
