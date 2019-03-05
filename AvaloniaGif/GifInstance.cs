@@ -13,23 +13,12 @@ namespace AvaloniaGif
 {
     public class GifInstance : IDisposable
     {
-        public Image Image { get; set; }
-        public GifDecoder Renderer { get; private set; }
-        public IClock Clock { get; private set; }
-
-        public int FrameCount { get; private set; }
+        public Image TargetControl { get; set; }
         public Stream Stream { get; private set; }
         public IterationCount IterationCount { get; private set; }
         public bool AutoStart { get; private set; } = true;
         public Progress<int> Progress { get; private set; }
-
-        internal CancellationTokenSource _rendererSignal = new CancellationTokenSource();
-
-        TimeSpan _prevTime, _delta;
-        int CurrentFrame;
-        IDisposable sub1;
-        bool streamCanDispose, _isFirstRun;
-
+        bool streamCanDispose;
         private GifDecoder gifDecoder;
         private GifBackgroundWorker bgWorker;
         private WriteableBitmap targetBitmap;
@@ -40,7 +29,7 @@ namespace AvaloniaGif
             targetBitmap?.Dispose();
         }
 
-        public async void SetSource(object newValue)
+        public void SetSource(object newValue)
         {
             var sourceUri = newValue as Uri;
             var sourceStr = newValue as Stream;
@@ -54,7 +43,8 @@ namespace AvaloniaGif
 
                 if (sourceUri.OriginalString.Trim().StartsWith("resm"))
                 {
-                    
+                    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                    stream = assetLocator.Open(sourceUri);
                 }
 
             }
@@ -67,15 +57,18 @@ namespace AvaloniaGif
                 throw new InvalidDataException("Missing valid URI or Stream.");
             }
 
-            this.gifDecoder = new GifDecoder(stream);
+            Stream = stream;
+            this.gifDecoder = new GifDecoder(Stream);
             this.bgWorker = new GifBackgroundWorker(gifDecoder);
             var pixSize = new PixelSize(gifDecoder.Header.Dimensions.Width, gifDecoder.Header.Dimensions.Height);
             this.targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888);
 
-            Image.DetachedFromVisualTree += delegate
+            TargetControl.DetachedFromVisualTree += delegate
             {
                 Dispose();
             };
+
+            TargetControl.Source = targetBitmap;
 
             bgWorker.CurrentFrameChanged += () => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(FrameChanged);
 
@@ -88,7 +81,9 @@ namespace AvaloniaGif
             {
                 gifDecoder.WriteBackBufToFb(lockedBitmap.Address);
             }
-            Image.InvalidateVisual();
+
+            // Hack for Pushing updates.
+            TargetControl.InvalidateVisual();
         }
 
         private void Run()

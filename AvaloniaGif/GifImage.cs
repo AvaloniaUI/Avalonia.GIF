@@ -123,7 +123,7 @@ namespace AvaloniaGif
             }
 
             instance = new GifInstance();
-            instance.Image = image;
+            instance.TargetControl = image;
             instance.SetSource(e.NewValue);
             SetInstance(image, instance);
         }

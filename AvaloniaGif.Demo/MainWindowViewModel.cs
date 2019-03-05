@@ -17,16 +17,13 @@ namespace AvaloniaGif.Demo
             this.AvailableGifs = new ObservableCollection<Uri>()
             {
                 new Uri("resm:AvaloniaGif.Demo.Images.earth.gif"),
-                new Uri("resm:AvaloniaGif.Demo.Images.bomb.gif"),
-                new Uri("resm:AvaloniaGif.Demo.Images.monster.gif"),
-                new Uri("resm:AvaloniaGif.Demo.Images.newton-cradle.gif"),
-                new Uri("http://sprites.pokecheck.org/i/491.gif")
+                new Uri("resm:AvaloniaGif.Demo.Images.rainbow.gif"),
+                new Uri("resm:AvaloniaGif.Demo.Images.newton-cradle.gif"), 
             };
         }
 
         public void DisplaySelectedGif()
-        {
-            
+        {            
             CurrentGif = SelectedGif;
         }
 
