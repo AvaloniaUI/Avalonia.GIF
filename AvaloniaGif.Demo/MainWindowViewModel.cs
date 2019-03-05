@@ -51,7 +51,7 @@ namespace AvaloniaGif.Demo
                 OnPropertyChanged(nameof(SelectedGif));
             }
         }
-
+        
         private Uri _currentGif;
         public Uri CurrentGif
         {
