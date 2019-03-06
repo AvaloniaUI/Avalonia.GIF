@@ -122,43 +122,24 @@ namespace AvaloniaGif.Decoding
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int PixCoord(int x, int y) => x + (y * _gifDimensions.Width);
 
-        /*
-         * 4 passes:
-         * Pass 1: rows 0, 8, 16, 24...
-         * Pass 2: rows 4, 12, 20, 28...
-         * Pass 3: rows 2, 6, 10, 14...
-         * Pass 4: rows 1, 3, 5, 7...
-         * */
-        static readonly Pass[] passes =
+        static readonly (int Start, int Step)[] Pass =
         {
-            new Pass(0, 8),
-            new Pass(4, 8),
-            new Pass(2, 4),
-            new Pass(1, 2)
+            (0, 8),
+            (4, 8),
+            (2, 4),
+            (1, 2)
         };
-
-        readonly struct Pass
-        {
-            public readonly int Start;
-            public readonly int Step;
-
-            public Pass(int start, int step)
-            {
-                Start = start;
-                Step = step;
-            }
-        }
 
         private static readonly Action<int, Action<int>> InterlaceRows = (height, RowAction) =>
         {
             for (int i = 0; i < 4; i++)
             {
-                var pass = passes[i];
-                var y = pass.Start;
+                var curPass = Pass[i];
+                var y = curPass.Start;
                 while (y < height)
                 {
                     RowAction(y);
-                    y += pass.Step;
+                    y += curPass.Step;
                 }
             }
         };
@@ -414,7 +395,7 @@ namespace AvaloniaGif.Decoding
                     unsafe
                     {
                         fixed (void* src = &_bitmapBackBuffer[0])
-                            Buffer.MemoryCopy(src,targetPointer.ToPointer(),(uint)_backBufferBytes,(uint)_backBufferBytes);
+                            Buffer.MemoryCopy(src, targetPointer.ToPointer(), (uint)_backBufferBytes, (uint)_backBufferBytes);
                         _hasNewFrame = false;
                     }
         }
