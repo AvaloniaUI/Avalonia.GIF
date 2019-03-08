@@ -8,6 +8,7 @@ using Avalonia.Animation;
 using System.Threading;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Rendering;
 
 namespace AvaloniaGif
 {
@@ -22,7 +23,8 @@ namespace AvaloniaGif
         private GifDecoder gifDecoder;
         private GifBackgroundWorker bgWorker;
         private WriteableBitmap targetBitmap;
-
+        private volatile bool hasNewFrame;
+        private readonly object bitmapSync = new object();
         public void Dispose()
         {
             this.bgWorker?.SendCommand(BgWorkerCommand.Dispose);
@@ -70,20 +72,31 @@ namespace AvaloniaGif
 
             TargetControl.Source = targetBitmap;
 
-            bgWorker.CurrentFrameChanged += () => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(FrameChanged);
+            bgWorker.CurrentFrameChanged += FrameChanged;
+
+            AvaloniaLocator.Current.GetService<IRenderTimer>().Tick += RenderTick;
 
             Run();
         }
 
+        private void RenderTick(TimeSpan time)
+        {
+            lock (bitmapSync)
+            {
+                if (!hasNewFrame) return;
+                TargetControl.InvalidateVisual();
+                hasNewFrame = false;
+            }
+        }
+
         private void FrameChanged()
         {
-            using (var lockedBitmap = targetBitmap.Lock())
+            lock (bitmapSync)
             {
-                gifDecoder.WriteBackBufToFb(lockedBitmap.Address);
+                hasNewFrame = true;
+                using (var lockedBitmap = targetBitmap.Lock())
+                    gifDecoder.WriteBackBufToFb(lockedBitmap.Address);
             }
-
-            // Hack for Pushing updates.
-            TargetControl.InvalidateVisual();
         }
 
         private void Run()

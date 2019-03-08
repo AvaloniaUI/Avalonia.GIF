@@ -16,6 +16,7 @@ namespace AvaloniaGif.Demo
         {
             this.AvailableGifs = new ObservableCollection<Uri>()
             {
+                new Uri("resm:AvaloniaGif.Demo.Images.laundry.gif"),
                 new Uri("resm:AvaloniaGif.Demo.Images.earth.gif"),
                 new Uri("resm:AvaloniaGif.Demo.Images.rainbow.gif"),
                 new Uri("resm:AvaloniaGif.Demo.Images.newton-cradle.gif"), 
