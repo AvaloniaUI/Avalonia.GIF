@@ -23,7 +23,7 @@ namespace AvaloniaGif
         private GifDecoder gifDecoder;
         private GifBackgroundWorker bgWorker;
         private WriteableBitmap targetBitmap;
-        private volatile bool hasNewFrame;
+        private bool hasNewFrame;
         private readonly object bitmapSync = new object();
         public void Dispose()
         {
@@ -71,12 +71,16 @@ namespace AvaloniaGif
             };
 
             TargetControl.Source = targetBitmap;
-
+            TargetControl.DetachedFromVisualTree += DetachedFromVisualTree;
             bgWorker.CurrentFrameChanged += FrameChanged;
 
-            AvaloniaLocator.Current.GetService<IRenderTimer>().Tick += RenderTick;
-
             Run();
+        }
+
+        private void DetachedFromVisualTree(object sender, VisualTreeAttachmentEventArgs e)
+        {
+            AvaloniaLocator.Current.GetService<IRenderTimer>().Tick -= RenderTick;
+            bgWorker?.SendCommand(BgWorkerCommand.Dispose);
         }
 
         private void RenderTick(TimeSpan time)
@@ -84,7 +88,7 @@ namespace AvaloniaGif
             lock (bitmapSync)
             {
                 if (!hasNewFrame) return;
-                TargetControl.InvalidateVisual();
+                TargetControl?.InvalidateVisual();
                 hasNewFrame = false;
             }
         }
@@ -104,6 +108,7 @@ namespace AvaloniaGif
             if (!Stream.CanSeek)
                 throw new ArgumentException("The stream is not seekable");
 
+            AvaloniaLocator.Current.GetService<IRenderTimer>().Tick += RenderTick;
             this.bgWorker?.SendCommand(BgWorkerCommand.Play);
         }
 
