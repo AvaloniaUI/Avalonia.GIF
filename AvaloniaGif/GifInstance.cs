@@ -9,6 +9,7 @@ using System.Threading;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Rendering;
+using Avalonia.Logging;
 
 namespace AvaloniaGif
 {
@@ -27,8 +28,10 @@ namespace AvaloniaGif
         private readonly object bitmapSync = new object();
         public void Dispose()
         {
-            this.bgWorker?.SendCommand(BgWorkerCommand.Dispose);
-            targetBitmap?.Dispose();
+            return;
+            // AvaloniaLocator.Current.GetService<IRenderTimer>().Tick -= RenderTick;
+            // this.bgWorker?.SendCommand(BgWorkerCommand.Dispose);
+            // targetBitmap?.Dispose();
         }
 
         public void SetSource(object newValue)
@@ -65,22 +68,11 @@ namespace AvaloniaGif
             var pixSize = new PixelSize(gifDecoder.Header.Dimensions.Width, gifDecoder.Header.Dimensions.Height);
             this.targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888);
 
-            TargetControl.DetachedFromVisualTree += delegate
-            {
-                Dispose();
-            };
-
             TargetControl.Source = targetBitmap;
-            TargetControl.DetachedFromVisualTree += DetachedFromVisualTree;
+           // TargetControl.DetachedFromVisualTree += delegate { this.Dispose(); };
             bgWorker.CurrentFrameChanged += FrameChanged;
 
             Run();
-        }
-
-        private void DetachedFromVisualTree(object sender, VisualTreeAttachmentEventArgs e)
-        {
-            AvaloniaLocator.Current.GetService<IRenderTimer>().Tick -= RenderTick;
-            bgWorker?.SendCommand(BgWorkerCommand.Dispose);
         }
 
         private void RenderTick(TimeSpan time)
@@ -97,9 +89,16 @@ namespace AvaloniaGif
         {
             lock (bitmapSync)
             {
-                hasNewFrame = true;
-                using (var lockedBitmap = targetBitmap.Lock())
-                    gifDecoder.WriteBackBufToFb(lockedBitmap.Address);
+                try
+                {
+                    hasNewFrame = true;
+                    using (var lockedBitmap = targetBitmap?.Lock())
+                        gifDecoder?.WriteBackBufToFb(lockedBitmap.Address);
+                }
+                catch (Exception e)
+                {
+                    AvaloniaLocator.Current.GetService<ILogSink>().Log(LogEventLevel.Error, "GIF", this, e.Message);
+                }
             }
         }
 
