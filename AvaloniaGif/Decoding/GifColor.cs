@@ -25,9 +25,9 @@ namespace AvaloniaGif
         /// <param name="g">Green</param>
         /// <param name="b">Blue</param>
         /// <param name="a">Alpha</param>
-        public GifColor(byte r, byte g, byte b, byte? a = null)
+        public GifColor(byte r, byte g, byte b, byte a = byte.MaxValue)
         {
-            this.A = a ?? 255;
+            this.A = a;
             this.R = r;
             this.G = g;
             this.B = b;

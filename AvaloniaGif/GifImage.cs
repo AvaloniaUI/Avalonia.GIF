@@ -94,7 +94,6 @@ namespace AvaloniaGif
             if (image == null)
                 return;
 
-
             GetInstance(image)?.AutoStartChanged(e);
         }
 
