@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Avalonia.Media;
 using ReactiveUI;
@@ -16,30 +15,30 @@ namespace AvaloniaGif.Demo
                 Stretch.Uniform,
                 Stretch.UniformToFill
             };
-            AvailableGifs = new List<Uri>
+            AvailableGifs = new List<string>
             {
-                new Uri("resm:AvaloniaGif.Demo.Images.laundry.gif"),
-                new Uri("resm:AvaloniaGif.Demo.Images.earth.gif"),
-                new Uri("resm:AvaloniaGif.Demo.Images.rainbow.gif"),
-                new Uri("resm:AvaloniaGif.Demo.Images.newton-cradle.gif"),
+                "resm:AvaloniaGif.Demo.Images.laundry.gif",
+                "resm:AvaloniaGif.Demo.Images.earth.gif",
+                "resm:AvaloniaGif.Demo.Images.rainbow.gif",
+                "resm:AvaloniaGif.Demo.Images.newton-cradle.gif",
                 
                 // Great shots by Vitaly Silkin, free to use:
                 // https://dribbble.com/colder/projects/219798-Loaders
-                new Uri("resm:AvaloniaGif.Demo.Images.loader.gif"), 
-                new Uri("resm:AvaloniaGif.Demo.Images.evitare-loader.gif"), 
-                new Uri("resm:AvaloniaGif.Demo.Images.c-loader.gif") 
+                "resm:AvaloniaGif.Demo.Images.loader.gif", 
+                "resm:AvaloniaGif.Demo.Images.evitare-loader.gif", 
+                "resm:AvaloniaGif.Demo.Images.c-loader.gif"
             };
         }
 
-        private IReadOnlyList<Uri> _availableGifs;
-        public IReadOnlyList<Uri> AvailableGifs
+        private IReadOnlyList<string> _availableGifs;
+        public IReadOnlyList<string> AvailableGifs
         {
             get => _availableGifs;
             set => this.RaiseAndSetIfChanged(ref _availableGifs, value);
         }
 
-        private Uri _selectedGif;
-        public Uri SelectedGif
+        private string _selectedGif;
+        public string SelectedGif
         {
             get => _selectedGif;
             set => this.RaiseAndSetIfChanged(ref _selectedGif, value);

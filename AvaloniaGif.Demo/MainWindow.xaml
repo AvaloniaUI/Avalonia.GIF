@@ -18,6 +18,6 @@
         </StackPanel>
         <Image Grid.Column="1"
                Stretch="{Binding Path=Stretch}" 
-               gif:GifImage.SourceUri="{Binding Path=SelectedGif}"/>
+               gif:GifImage.SourceUriRaw="{Binding Path=SelectedGif}"/>
     </Grid>
 </Window>
