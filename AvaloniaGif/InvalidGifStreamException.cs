@@ -1,22 +1,25 @@
 using System;
 using System.Runtime.Serialization;
 
-[Serializable]
-internal class InvalidGifStreamException : Exception
+namespace AvaloniaGif
 {
-    public InvalidGifStreamException()
+    [Serializable]
+    internal class InvalidGifStreamException : Exception
     {
-    }
+        public InvalidGifStreamException()
+        {
+        }
 
-    public InvalidGifStreamException(string message) : base(message)
-    {
-    }
+        public InvalidGifStreamException(string message) : base(message)
+        {
+        }
 
-    public InvalidGifStreamException(string message, Exception innerException) : base(message, innerException)
-    {
-    }
+        public InvalidGifStreamException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
 
-    protected InvalidGifStreamException(SerializationInfo info, StreamingContext context) : base(info, context)
-    {
+        protected InvalidGifStreamException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
     }
 }

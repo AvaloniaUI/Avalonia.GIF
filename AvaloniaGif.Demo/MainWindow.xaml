@@ -1,7 +1,10 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:gif="clr-namespace:AvaloniaGif;assembly=AvaloniaGif"
-        Title="GIFs on Avalonia!" Height="480" Width="680" Background="White">
+        x:Class="AvaloniaGif.Demo.MainWindow"
+        Title="GIFs on Avalonia!" 
+        Height="480" Width="680"
+        Background="White">
     <DockPanel LastChildFill="True">
         <ListBox DockPanel.Dock="Left" Width="300" SelectedItem="{Binding SelectedGif}" Items="{Binding AvailableGifs}"/>
         <Image Stretch="None" gif:GifImage.SourceUri="{Binding SelectedGif}"/>

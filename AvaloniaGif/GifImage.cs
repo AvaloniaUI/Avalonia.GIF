@@ -1,14 +1,8 @@
 ﻿using System;
 using System.IO;
-using AvaloniaGif.Extensions;
 using Avalonia;
-using Avalonia.Media.Imaging;
-
 using Avalonia.Animation;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Portable.Xaml.Markup;
-using System.Threading;
 
 namespace AvaloniaGif
 {
