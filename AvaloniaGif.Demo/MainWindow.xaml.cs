@@ -1,15 +1,15 @@
-﻿using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
-using Avalonia;
+﻿using Avalonia.Markup.Xaml;
+using Avalonia.ReactiveUI;
+using ReactiveUI;
 
 namespace AvaloniaGif.Demo
 {
-    public class MainWindow : Window
+    public class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
         public MainWindow()
         {
             AvaloniaXamlLoader.Load(this);
-            this.DataContext = new MainWindowViewModel();
+            this.WhenActivated(disposables => { });
         }
     }
 }

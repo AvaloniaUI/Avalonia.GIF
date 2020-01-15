@@ -1,64 +1,62 @@
-using System.Collections.ObjectModel;
 using System;
-using System.ComponentModel;
+using System.Collections.Generic;
+using Avalonia.Media;
+using ReactiveUI;
 
 namespace AvaloniaGif.Demo
 {
-    public class MainWindowViewModel : INotifyPropertyChanged
+    public class MainWindowViewModel : ReactiveObject
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void OnPropertyChanged(string v)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(v));
-        }
-
         public MainWindowViewModel()
         {
-            this.AvailableGifs = new ObservableCollection<Uri>()
+            Stretches = new List<Stretch>
+            {
+                Stretch.None, 
+                Stretch.Fill,
+                Stretch.Uniform,
+                Stretch.UniformToFill
+            };
+            AvailableGifs = new List<Uri>
             {
                 new Uri("resm:AvaloniaGif.Demo.Images.laundry.gif"),
                 new Uri("resm:AvaloniaGif.Demo.Images.earth.gif"),
                 new Uri("resm:AvaloniaGif.Demo.Images.rainbow.gif"),
-                new Uri("resm:AvaloniaGif.Demo.Images.newton-cradle.gif"), 
+                new Uri("resm:AvaloniaGif.Demo.Images.newton-cradle.gif"),
+                
+                // Great shots by Vitaly Silkin, free to use:
+                // https://dribbble.com/colder/projects/219798-Loaders
+                new Uri("resm:AvaloniaGif.Demo.Images.loader.gif"), 
+                new Uri("resm:AvaloniaGif.Demo.Images.evitare-loader.gif"), 
+                new Uri("resm:AvaloniaGif.Demo.Images.c-loader.gif") 
             };
         }
 
-        public void DisplaySelectedGif()
-        {            
-            CurrentGif = SelectedGif;
-        }
-
-        private ObservableCollection<Uri> _availableGifs;
-        public ObservableCollection<Uri> AvailableGifs
+        private IReadOnlyList<Uri> _availableGifs;
+        public IReadOnlyList<Uri> AvailableGifs
         {
             get => _availableGifs;
-            set
-            {
-                _availableGifs = value;
-                OnPropertyChanged(nameof(AvailableGifs));
-            }
+            set => this.RaiseAndSetIfChanged(ref _availableGifs, value);
         }
 
         private Uri _selectedGif;
         public Uri SelectedGif
         {
             get => _selectedGif;
-            set
-            {
-                _selectedGif = value;
-                OnPropertyChanged(nameof(SelectedGif));
-            }
+            set => this.RaiseAndSetIfChanged(ref _selectedGif, value);
         }
         
-        private Uri _currentGif;
-        public Uri CurrentGif
+        private IReadOnlyList<Stretch> _stretches;
+        public IReadOnlyList<Stretch> Stretches
         {
-            get => _currentGif;
-            set
-            {
-                _currentGif = value;
-                OnPropertyChanged(nameof(CurrentGif));
-            }
+            get => _stretches;
+            set => this.RaiseAndSetIfChanged(ref _stretches, value);
+        }
+
+        private Stretch _stretch = Stretch.None;
+        public Stretch Stretch
+        {
+            get => _stretch;
+            set => this.RaiseAndSetIfChanged(ref _stretch, value);
         }
     }
 }

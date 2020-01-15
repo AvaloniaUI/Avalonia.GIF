@@ -11,13 +11,13 @@
     <EmbeddedResource Include="**\*.xaml">
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="**\*.gif"/>
+    <EmbeddedResource Include="**\*.gif" />
     <EmbeddedResource Include="Assets\*" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="0.9.1" />
     <PackageReference Include="Avalonia.Desktop" Version="0.9.1" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.9.1" />
-    <ProjectReference Include="..\AvaloniaGif\AvaloniaGif.csproj"/>
+    <ProjectReference Include="..\AvaloniaGif\AvaloniaGif.csproj" />
   </ItemGroup>
 </Project>
