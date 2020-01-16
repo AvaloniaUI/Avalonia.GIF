@@ -5,11 +5,7 @@
         Title="GIFs on Avalonia!" 
         Height="480" Width="680"
         Background="White">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*" />
-            <ColumnDefinition Width="3*" />
-        </Grid.ColumnDefinitions>
+    <Grid ColumnDefinitions="2*, 3*">
         <StackPanel Grid.Column="0">
             <ComboBox SelectedItem="{Binding Path=Stretch}"
                       Items="{Binding Path=Stretches}"/>
