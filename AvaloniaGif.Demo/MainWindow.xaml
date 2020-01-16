@@ -1,9 +1,19 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:gif="clr-namespace:AvaloniaGif;assembly=AvaloniaGif"
-        Title="GIFs on Avalonia!" Height="480" Width="680" Background="White">
-    <DockPanel LastChildFill="True">
-        <ListBox DockPanel.Dock="Left" Width="300" SelectedItem="{Binding SelectedGif}" Items="{Binding AvailableGifs}"/>
-        <Image Stretch="None" gif:GifImage.SourceUri="{Binding SelectedGif}"/>
-    </DockPanel>
+        x:Class="AvaloniaGif.Demo.MainWindow"
+        Title="GIFs on Avalonia!" 
+        Height="480" Width="680"
+        Background="White">
+    <Grid ColumnDefinitions="2*, 3*">
+        <StackPanel Grid.Column="0">
+            <ComboBox SelectedItem="{Binding Path=Stretch}"
+                      Items="{Binding Path=Stretches}"/>
+            <ListBox SelectedItem="{Binding Path=SelectedGif}" 
+                     Items="{Binding Path=AvailableGifs}" />
+        </StackPanel>
+        <Image Grid.Column="1"
+               Stretch="{Binding Path=Stretch}" 
+               gif:GifImage.SourceUriRaw="{Binding Path=SelectedGif}"/>
+    </Grid>
 </Window>
