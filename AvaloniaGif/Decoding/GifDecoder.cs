@@ -218,7 +218,7 @@ namespace AvaloniaGif.Decoding
                 {
                     var indexColor = _frameIndexSpan.Span[indexOffset + i];
 
-                    if (targetOffset >= len | indexColor >= activeColorTable.Length | activeColorTable == null) return;
+                    if (activeColorTable == null || targetOffset >= len || indexColor >= activeColorTable.Length) return;
 
                     if (!(hT & indexColor == tC))
                         _bitmapBackBuffer[targetOffset] = activeColorTable[indexColor];
