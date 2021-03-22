@@ -15,21 +15,19 @@ using JetBrains.Annotations;
 namespace AvaloniaGif
 {
     public class GifInstance : IDisposable
-    {
-        public Image TargetControl { get; set; }
+    { 
         public Stream Stream { get; private set; }
         public IterationCount IterationCount { get; private set; }
         public bool AutoStart { get; private set; } = true;
         public Progress<int> Progress { get; private set; }
+        
         bool _streamCanDispose;
         private GifDecoder _gifDecoder;
         private GifBackgroundWorker _bgWorker;
         private WriteableBitmap _targetBitmap;
         private bool _hasNewFrame;
         private bool _isDisposed;
-        private readonly object _bitmapSync = new object();
-        private static readonly object _globalUIThreadUpdateLock = new object();
-
+        
         public void SetSource(object newValue)
         {
             var sourceUri = newValue as Uri;
@@ -70,17 +68,7 @@ namespace AvaloniaGif
         }
 
         public PixelSize GifPixelSize { get; private set; }
-
-        private void RenderTick(TimeSpan time)
-        {
-            if (_isDisposed | !_hasNewFrame) return;
-            lock (_globalUIThreadUpdateLock)
-                lock (_bitmapSync)
-                {
-                    TargetControl?.InvalidateVisual();
-                }
-        }
-
+ 
         public WriteableBitmap GetBitmap()
         {
             WriteableBitmap ret = null;
