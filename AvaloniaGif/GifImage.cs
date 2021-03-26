@@ -11,7 +11,6 @@ using Avalonia.Media.Imaging;
 
 namespace AvaloniaGif
 {
-    
     public class GifImage : Control
     {
         public static readonly StyledProperty<string> SourceUriRawProperty = AvaloniaProperty.Register<GifImage, string>("SourceUriRaw");
