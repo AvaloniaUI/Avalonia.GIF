@@ -48,7 +48,7 @@ namespace AvaloniaGif.Extensions
             {
                 stream.Read(tempBuf, 0, 1);
 
-                blockLength = (int)tempBuf[0];
+                blockLength = tempBuf[0];
                 stream.Position += blockLength;
 
                 // Guard against infinite loop.

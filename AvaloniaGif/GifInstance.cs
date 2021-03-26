@@ -10,25 +10,24 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Rendering;
 using Avalonia.Logging;
+using JetBrains.Annotations;
 
 namespace AvaloniaGif
 {
     public class GifInstance : IDisposable
-    {
-        public Image TargetControl { get; set; }
+    { 
         public Stream Stream { get; private set; }
         public IterationCount IterationCount { get; private set; }
         public bool AutoStart { get; private set; } = true;
         public Progress<int> Progress { get; private set; }
+        
         bool _streamCanDispose;
         private GifDecoder _gifDecoder;
         private GifBackgroundWorker _bgWorker;
         private WriteableBitmap _targetBitmap;
         private bool _hasNewFrame;
         private bool _isDisposed;
-        private readonly object _bitmapSync = new object();
-        private static readonly object _globalUIThreadUpdateLock = new object();
-
+        
         public void SetSource(object newValue)
         {
             var sourceUri = newValue as Uri;
@@ -58,29 +57,34 @@ namespace AvaloniaGif
             }
 
             Stream = stream;
-            this._gifDecoder = new GifDecoder(Stream);
-            this._bgWorker = new GifBackgroundWorker(_gifDecoder);
+            _gifDecoder = new GifDecoder(Stream);
+            _bgWorker = new GifBackgroundWorker(_gifDecoder);
             var pixSize = new PixelSize(_gifDecoder.Header.Dimensions.Width, _gifDecoder.Header.Dimensions.Height);
-            this._targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888);
-
-            TargetControl.Source = _targetBitmap;
-            //TargetControl.DetachedFromVisualTree += delegate { this.Dispose(); };
+            
+            _targetBitmap = new  WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
             _bgWorker.CurrentFrameChanged += FrameChanged;
-
+            GifPixelSize = pixSize;
             Run();
         }
 
-        private void RenderTick(TimeSpan time)
+        public PixelSize GifPixelSize { get; private set; }
+ 
+        public WriteableBitmap GetBitmap()
         {
-            if (_isDisposed | !_hasNewFrame) return;
-            lock (_globalUIThreadUpdateLock)
-                lock (_bitmapSync)
+            WriteableBitmap ret = null;
+            
+            lock (_bitmapSync)
+            {
+                if (_hasNewFrame)
                 {
-                    TargetControl?.InvalidateVisual();
                     _hasNewFrame = false;
+                    ret = _targetBitmap;
                 }
-        }
+            }
 
+            return ret;
+        }
+        
         private void FrameChanged()
         {
             lock (_bitmapSync)
@@ -97,14 +101,13 @@ namespace AvaloniaGif
             if (!Stream.CanSeek)
                 throw new ArgumentException("The stream is not seekable");
 
-            AvaloniaLocator.Current.GetService<IRenderTimer>().Tick += RenderTick;
-            this._bgWorker?.SendCommand(BgWorkerCommand.Play);
+            _bgWorker?.SendCommand(BgWorkerCommand.Play);
         }
 
         public void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
         {
             var newVal = (IterationCount)e.NewValue;
-            this.IterationCount = newVal;
+            IterationCount = newVal;
         }
 
         public void AutoStartChanged(AvaloniaPropertyChangedEventArgs e)
@@ -116,8 +119,7 @@ namespace AvaloniaGif
         public void Dispose()
         {
             _isDisposed = true;
-            AvaloniaLocator.Current.GetService<IRenderTimer>().Tick -= RenderTick;
-            this._bgWorker?.SendCommand(BgWorkerCommand.Dispose);
+            _bgWorker?.SendCommand(BgWorkerCommand.Dispose);
             _targetBitmap?.Dispose();
         }
     }

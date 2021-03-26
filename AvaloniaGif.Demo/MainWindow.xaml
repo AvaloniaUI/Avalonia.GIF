@@ -2,18 +2,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:gif="clr-namespace:AvaloniaGif;assembly=AvaloniaGif"
         x:Class="AvaloniaGif.Demo.MainWindow"
-        Title="GIFs on Avalonia!" 
+        Title="GIFs on Avalonia!"
         Height="480" Width="680"
         Background="White">
     <Grid ColumnDefinitions="2*, 3*">
         <StackPanel Grid.Column="0">
             <ComboBox SelectedItem="{Binding Path=Stretch}"
-                      Items="{Binding Path=Stretches}"/>
-            <ListBox SelectedItem="{Binding Path=SelectedGif}" 
+                      Items="{Binding Path=Stretches}" />
+            <ListBox SelectedItem="{Binding Path=SelectedGif}"
                      Items="{Binding Path=AvailableGifs}" />
         </StackPanel>
-        <Image Grid.Column="1"
-               Stretch="{Binding Path=Stretch}" 
-               gif:GifImage.SourceUriRaw="{Binding Path=SelectedGif}"/>
+        <gif:GifImage Grid.Column="1" SourceUriRaw="{Binding Path=SelectedGif}" 
+                      Stretch="Uniform"
+                      StretchDirection="Both" />
     </Grid>
 </Window>

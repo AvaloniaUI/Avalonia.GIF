@@ -3,11 +3,26 @@ using System.IO;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
 
 namespace AvaloniaGif
 {
-    public class GifImage
+    public class GifImage : Control
     {
+        public static readonly StyledProperty<string> SourceUriRawProperty = AvaloniaProperty.Register<GifImage, string>("SourceUriRaw");
+        public static readonly StyledProperty<Uri> SourceUriProperty = AvaloniaProperty.Register<GifImage, Uri>("SourceUri");
+        public static readonly StyledProperty<Stream> SourceStreamProperty = AvaloniaProperty.Register<GifImage, Stream>("SourceStream");
+        public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<GifImage, IterationCount>("IterationCount");
+        private GifInstance gifInstance;
+        public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<GifImage, bool>("AutoStart");
+        public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<GifImage, StretchDirection>("StretchDirection");
+        public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<GifImage, Stretch>("Stretch");
+        private RenderTargetBitmap backingRTB;
+
         static GifImage()
         {
             SourceUriRawProperty.Changed.Subscribe(SourceChanged);
@@ -15,120 +30,152 @@ namespace AvaloniaGif
             SourceStreamProperty.Changed.Subscribe(SourceChanged);
             IterationCountProperty.Changed.Subscribe(IterationCountChanged);
             AutoStartProperty.Changed.Subscribe(AutoStartChanged);
+            AffectsRender<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
+            AffectsArrange<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
+            AffectsMeasure<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
         }
-        
-        public static readonly AttachedProperty<string> SourceUriRawProperty = AvaloniaProperty
-            .RegisterAttached<GifImage, Image, string>("SourceUriRaw");
 
-        public static string GetSourceUriRaw(Image target)
+        public string SourceUriRaw
         {
-            return target.GetValue(SourceUriRawProperty);
+            get => GetValue(SourceUriRawProperty);
+            set => SetValue(SourceUriRawProperty, value);
         }
 
-        public static void SetSourceUriRaw(Image target, string value)
+        public Uri SourceUri
         {
-            target.SetValue(SourceUriRawProperty, value);
+            get => GetValue(SourceUriProperty);
+            set => SetValue(SourceUriProperty, value);
         }
 
-        public static readonly AttachedProperty<Uri> SourceUriProperty = AvaloniaProperty
-            .RegisterAttached<GifImage, Image, Uri>("SourceUri");
-
-        public static Uri GetSourceUri(Image target)
+        public Stream SourceStream
         {
-            return target.GetValue(SourceUriProperty);
+            get => GetValue(SourceStreamProperty);
+            set => SetValue(SourceStreamProperty, value);
         }
 
-        public static void SetSourceUri(Image target, Uri value)
+        public IterationCount IterationCount
         {
-            target.SetValue(SourceUriProperty, value);
+            get => GetValue(IterationCountProperty);
+            set => SetValue(IterationCountProperty, value);
         }
 
-        public static readonly AttachedProperty<Stream> SourceStreamProperty = AvaloniaProperty
-            .RegisterAttached<GifImage, Image, Stream>("SourceStream");
-
-        public static Stream GetSourceStream(Image target)
+        public bool AutoStart
         {
-            return target.GetValue(SourceStreamProperty);
+            get => GetValue(AutoStartProperty);
+            set => SetValue(AutoStartProperty, value);
         }
 
-        public static void SetSourceStream(Image target, Stream value)
+        public StretchDirection StretchDirection
         {
-            target.SetValue(SourceStreamProperty, value);
+            get => GetValue(StretchDirectionProperty);
+            set => SetValue(StretchDirectionProperty, value);
         }
 
-        public static readonly AttachedProperty<IterationCount> IterationCountProperty = AvaloniaProperty
-            .RegisterAttached<GifImage, Image, IterationCount>("IterationCount", IterationCount.Infinite);
-
-        public static IterationCount GetIterationCount(Image target)
+        public Stretch Stretch
         {
-            return target.GetValue(IterationCountProperty);
+            get => GetValue(StretchProperty);
+            set => SetValue(StretchProperty, value);
         }
 
-        public static void SetIterationCount(Image target, IterationCount value)
-        {
-            target.SetValue(IterationCountProperty, value);
-        }
-
-        public static readonly AttachedProperty<bool> AutoStartProperty = AvaloniaProperty
-            .RegisterAttached<GifImage, Image, bool>("AutoStart", true);
-
-        public static bool GetAutoStart(Image target)
-        {
-            return target.GetValue(AutoStartProperty);
-        }
-
-        public static void SetAutoStart(Image target, bool value)
-        {
-            target.SetValue(AutoStartProperty, value);
-        }
-
-        public static readonly AttachedProperty<GifInstance> InstanceProperty = AvaloniaProperty
-            .RegisterAttached<GifImage, Image, GifInstance>("Instance");
-
-        public static GifInstance GetInstance(Image target)
-        {
-            return target.GetValue(InstanceProperty);
-        }
-
-        public static void SetInstance(Image target, GifInstance value)
-        {
-            target.SetValue(InstanceProperty, value);
-        }
-        
         private static void AutoStartChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as Image;
+            var image = e.Sender as GifImage;
             if (image == null)
                 return;
-
-            GetInstance(image)?.AutoStartChanged(e);
         }
 
         private static void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as Image;
+            var image = e.Sender as GifImage;
             if (image == null)
-                return;
-
-            GetInstance(image)?.IterationCountChanged(e);
+                return; 
         }
 
+        public override void Render(DrawingContext context)
+        {
+            if (gifInstance.GetBitmap() is WriteableBitmap source && backingRTB is not null)
+            {
+                using (var ctx = backingRTB.CreateDrawingContext(null))
+                {
+                    var ts = new Rect(source.Size);
+                    ctx.DrawBitmap(source.PlatformImpl, 1, ts,ts);
+                }
+            }
+            if (backingRTB is not null && Bounds.Width > 0 && Bounds.Height > 0)
+            {
+                var viewPort = new Rect(Bounds.Size);
+                var sourceSize = backingRTB.Size;
+
+                var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
+                var scaledSize = sourceSize * scale;
+                var destRect = viewPort
+                    .CenterRect(new Rect(scaledSize))
+                    .Intersect(viewPort);
+                
+                var sourceRect = new Rect(sourceSize)
+                    .CenterRect(new Rect(destRect.Size / scale));
+
+                var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+
+                context.DrawImage(backingRTB, sourceRect, destRect, interpolationMode);
+            }
+            
+            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
+        }
+
+        /// <summary>
+        /// Measures the control.
+        /// </summary>
+        /// <param name="availableSize">The available size.</param>
+        /// <returns>The desired size of the control.</returns>
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            var source = backingRTB;
+            var result = new Size();
+
+            if (source != null)
+            {
+                result = Stretch.CalculateSize(availableSize, source.Size, StretchDirection);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            var source = backingRTB;
+
+            if (source != null)
+            {
+                var sourceSize = source.Size;
+                var result = Stretch.CalculateSize(finalSize, sourceSize);
+                return result;
+            }
+            else
+            {
+                return new Size();
+            }
+        }
+        
         private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as Image;
+            var image = e.Sender as GifImage;
             if (image == null)
                 return;
 
-            var instance = GetInstance(image);
-            instance?.Dispose();
-
+            image.gifInstance?.Dispose();
+            image.backingRTB?.Dispose();
+            image.backingRTB = null;
+            
             var value = e.NewValue;
             if (value is string s)
                 value = new Uri(s);
 
-            instance = new GifInstance {TargetControl = image};
-            instance.SetSource(value);
-            SetInstance(image, instance);
+            image.gifInstance = new GifInstance();
+            image.gifInstance.SetSource(value);
+
+            image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
         }
     }
 }
