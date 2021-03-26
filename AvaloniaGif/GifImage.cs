@@ -78,7 +78,6 @@ namespace AvaloniaGif
             set => SetValue(StretchProperty, value);
         }
 
-
         private static void AutoStartChanged(AvaloniaPropertyChangedEventArgs e)
         {
             var image = e.Sender as GifImage;
