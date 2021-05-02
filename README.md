@@ -1,4 +1,4 @@
-## AvaloniaGif
+## Avalonia.GIF
 
 GIF image renderer and player for Avalonia UI Framework.
 
