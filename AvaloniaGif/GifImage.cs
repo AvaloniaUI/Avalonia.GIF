@@ -93,6 +93,9 @@ namespace AvaloniaGif
 
         public override void Render(DrawingContext context)
         {
+            if (gifInstance == null)
+                return;
+                
             if (gifInstance.GetBitmap() is WriteableBitmap source && backingRTB is not null)
             {
                 using (var ctx = backingRTB.CreateDrawingContext(null))
