@@ -72,14 +72,11 @@ namespace AvaloniaGif
         public WriteableBitmap GetBitmap()
         {
             WriteableBitmap ret = null;
-            
-            lock (_bitmapSync)
+
+            if (_hasNewFrame)
             {
-                if (_hasNewFrame)
-                {
-                    _hasNewFrame = false;
-                    ret = _targetBitmap;
-                }
+                _hasNewFrame = false;
+                ret = _targetBitmap;
             }
 
             return ret;
@@ -87,13 +84,12 @@ namespace AvaloniaGif
         
         private void FrameChanged()
         {
-            lock (_bitmapSync)
-            {
-                if (_isDisposed) return;
-                _hasNewFrame = true;
-                using (var lockedBitmap = _targetBitmap?.Lock())
-                    _gifDecoder?.WriteBackBufToFb(lockedBitmap.Address);
-            }
+            if (_isDisposed) return;
+            _hasNewFrame = true;
+            
+            using (var lockedBitmap = _targetBitmap?.Lock())
+                _gifDecoder?.WriteBackBufToFb(lockedBitmap.Address);
+          
         }
 
         private void Run()
