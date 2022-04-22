@@ -33,10 +33,8 @@ SOFTWARE. */
  */
 
 using System;
-using System.Security.Cryptography;
-
 using System.Runtime.CompilerServices;
-
+using System.Security.Cryptography;
 
 namespace AvaloniaGif.Caching
 {
@@ -68,7 +66,7 @@ namespace AvaloniaGif.Caching
 
 
         private int _RemainingLength;
-        private long _TotalLength = 0;
+        private long _TotalLength;
         private int _CurrentIndex;
         private byte[] _CurrentArray;
 
@@ -77,7 +75,7 @@ namespace AvaloniaGif.Caching
             if (BitConverter.IsLittleEndian)
             {
 
-                FuncGetLittleEndianUInt32 = new Func<byte[], int, uint>((x, i) =>
+                FuncGetLittleEndianUInt32 = (x, i) =>
                 {
                     unsafe
                     {
@@ -86,12 +84,12 @@ namespace AvaloniaGif.Caching
                             return *(uint*)(array + i);
                         }
                     }
-                });
-                FuncGetFinalHashUInt32 = new Func<uint, uint>(i => (i & 0x000000FFU) << 24 | (i & 0x0000FF00U) << 8 | (i & 0x00FF0000U) >> 8 | (i & 0xFF000000U) >> 24);
+                };
+                FuncGetFinalHashUInt32 = i => (i & 0x000000FFU) << 24 | (i & 0x0000FF00U) << 8 | (i & 0x00FF0000U) >> 8 | (i & 0xFF000000U) >> 24;
             }
             else
             {
-                FuncGetLittleEndianUInt32 = new Func<byte[], int, uint>((x, i) =>
+                FuncGetLittleEndianUInt32 = (x, i) =>
                 {
                     unsafe
                     {
@@ -100,8 +98,8 @@ namespace AvaloniaGif.Caching
                             return (uint)(array[i++] | (array[i++] << 8) | (array[i++] << 16) | (array[i] << 24));
                         }
                     }
-                });
-                FuncGetFinalHashUInt32 = new Func<uint, uint>(i => i);
+                };
+                FuncGetFinalHashUInt32 = i => i;
             }
         }
 
@@ -109,7 +107,7 @@ namespace AvaloniaGif.Caching
         /// Creates an instance of <see cref="XXHash32"/> class by default seed(0).
         /// </summary>
         /// <returns></returns>
-        public new static XXHash32 Create() => new XXHash32();
+        public new static XXHash32 Create() => new();
 
         /// <summary>
         /// Creates an instance of the specified implementation of XXHash32 algorithm.
@@ -313,7 +311,7 @@ namespace AvaloniaGif.Caching
         {
             if (BitConverter.IsLittleEndian)
             {
-                FuncGetLittleEndianUInt32 = new Func<byte[], int, uint>((x, i) =>
+                FuncGetLittleEndianUInt32 = (x, i) =>
                 {
                     unsafe
                     {
@@ -322,8 +320,8 @@ namespace AvaloniaGif.Caching
                             return *(uint*)(array + i);
                         }
                     }
-                });
-                FuncGetLittleEndianUInt64 = new Func<byte[], int, ulong>((x, i) =>
+                };
+                FuncGetLittleEndianUInt64 = (x, i) =>
                 {
                     unsafe
                     {
@@ -332,12 +330,12 @@ namespace AvaloniaGif.Caching
                             return *(ulong*)(array + i);
                         }
                     }
-                });
-                FuncGetFinalHashUInt64 = new Func<ulong, ulong>(i => (i & 0x00000000000000FFUL) << 56 | (i & 0x000000000000FF00UL) << 40 | (i & 0x0000000000FF0000UL) << 24 | (i & 0x00000000FF000000UL) << 8 | (i & 0x000000FF00000000UL) >> 8 | (i & 0x0000FF0000000000UL) >> 24 | (i & 0x00FF000000000000UL) >> 40 | (i & 0xFF00000000000000UL) >> 56);
+                };
+                FuncGetFinalHashUInt64 = i => (i & 0x00000000000000FFUL) << 56 | (i & 0x000000000000FF00UL) << 40 | (i & 0x0000000000FF0000UL) << 24 | (i & 0x00000000FF000000UL) << 8 | (i & 0x000000FF00000000UL) >> 8 | (i & 0x0000FF0000000000UL) >> 24 | (i & 0x00FF000000000000UL) >> 40 | (i & 0xFF00000000000000UL) >> 56;
             }
             else
             {
-                FuncGetLittleEndianUInt32 = new Func<byte[], int, uint>((x, i) =>
+                FuncGetLittleEndianUInt32 = (x, i) =>
                 {
                     unsafe
                     {
@@ -346,8 +344,8 @@ namespace AvaloniaGif.Caching
                             return (uint)(array[i++] | (array[i++] << 8) | (array[i++] << 16) | (array[i] << 24));
                         }
                     }
-                });
-                FuncGetLittleEndianUInt64 = new Func<byte[], int, ulong>((x, i) =>
+                };
+                FuncGetLittleEndianUInt64 = (x, i) =>
                 {
                     unsafe
                     {
@@ -356,8 +354,8 @@ namespace AvaloniaGif.Caching
                             return array[i++] | ((ulong)array[i++] << 8) | ((ulong)array[i++] << 16) | ((ulong)array[i++] << 24) | ((ulong)array[i++] << 32) | ((ulong)array[i++] << 40) | ((ulong)array[i++] << 48) | ((ulong)array[i] << 56);
                         }
                     }
-                });
-                FuncGetFinalHashUInt64 = new Func<ulong, ulong>(i => i);
+                };
+                FuncGetFinalHashUInt64 = i => i;
             }
         }
 
@@ -365,7 +363,7 @@ namespace AvaloniaGif.Caching
         /// Creates an instance of <see cref="XXHash64"/> class by default seed(0).
         /// </summary>
         /// <returns></returns>
-        public new static XXHash64 Create() => new XXHash64();
+        public new static XXHash64 Create() => new();
 
         /// <summary>
         /// Creates an instance of the specified implementation of XXHash64 algorithm.
