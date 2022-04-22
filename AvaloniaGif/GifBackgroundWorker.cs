@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Diagnostics;
-using System.Collections.Generic;
 using AvaloniaGif.Decoding;
-using System.Linq;
 
 namespace AvaloniaGif
 {
@@ -39,6 +39,7 @@ namespace AvaloniaGif
 
         public Action CurrentFrameChanged;
         private int _currentIndex;
+        private readonly CancellationToken _ctoken;
 
         public int CurrentFrameIndex
         {
@@ -59,13 +60,13 @@ namespace AvaloniaGif
 
         private void RefreshColorTableCache()
         {
-            foreach (var cacheID in _colorTableIDList)
-                GifDecoder.GlobalColorTableCache.TryGetValue(cacheID, out var _);
+            foreach (var cacheId in _colorTableIDList)
+                GifDecoder.GlobalColorTableCache.TryGetValue(cacheId, out var _);
         }
 
         private void InternalSeek(int value, bool isManual)
         {
-            int lowerBound = 0;
+            var lowerBound = 0;
 
             // Skip already rendered frames if the seek position is above the previous frame index.
             if (isManual & value > _currentIndex)
@@ -81,7 +82,7 @@ namespace AvaloniaGif
                 lowerBound = _currentIndex;
             }
 
-            for (int fI = lowerBound; fI <= value; fI++)
+            for (var fI = lowerBound; fI <= value; fI++)
             {
                 var targetFrame = _gifDecoder.Frames[fI];
 
@@ -111,12 +112,13 @@ namespace AvaloniaGif
             }
         }
 
-        public GifBackgroundWorker(GifDecoder gifDecode)
+        public GifBackgroundWorker(GifDecoder gifDecode, CancellationToken cancellationToken)
         {
             _gifDecoder = gifDecode;
             _lockObj = new object();
-            _repeatBehavior = new GifRepeatBehavior() { LoopForever = true };
+            _repeatBehavior = new GifRepeatBehavior { LoopForever = true };
             _cmdQueue = new Queue<BgWorkerCommand>();
+            _ctoken = cancellationToken;
 
             // Save the color table cache ID's to refresh them on cache while
             // the image is either stopped/paused.
@@ -130,7 +132,7 @@ namespace AvaloniaGif
 
             ResetPlayVars();
 
-            _bgThread = Task.Factory.StartNew(MainLoop, CancellationToken.None, TaskCreationOptions.LongRunning,
+            _bgThread = Task.Factory.StartNew(MainLoop, cancellationToken, TaskCreationOptions.LongRunning,
                 TaskScheduler.Current);
         }
 
@@ -153,7 +155,7 @@ namespace AvaloniaGif
         {
             while (true)
             {
-                if (_shouldStop)
+                if (_shouldStop || _ctoken.IsCancellationRequested)
                 {
                     DoDispose();
                     break;
