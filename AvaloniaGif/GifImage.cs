@@ -106,6 +106,7 @@ namespace AvaloniaGif
             var image = e.Sender as GifImage;
             if (image is null || e.NewValue is not IterationCount iterationCount)
                 return;
+
             image.IterationCount = iterationCount;
         }
 
@@ -121,7 +122,7 @@ namespace AvaloniaGif
 
                 _stopwatch ??= new Stopwatch();
                 _stopwatch.Reset();
-                
+
                 Dispatcher.UIThread.Post(InvalidateMeasure, DispatcherPriority.Background);
                 Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
 
@@ -140,8 +141,8 @@ namespace AvaloniaGif
             }
 
             var currentFrame = gifInstance.ProcessFrameTime(_stopwatch.Elapsed);
- 
-            if (currentFrame is { } source && backingRTB is not null)
+
+            if (currentFrame is { } source && backingRTB is { })
             {
                 using var ctx = backingRTB.CreateDrawingContext(null);
                 var ts = new Rect(source.Size);

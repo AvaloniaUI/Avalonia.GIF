@@ -30,7 +30,7 @@ namespace AvaloniaGif
         private int _currentFrameIndex;
         private uint _totalFrameCount;
 
-        public CancellationTokenSource CurrentCts { get; private set; }
+        public CancellationTokenSource CurrentCts { get; }
 
         public GifInstance(object newValue)
         {
@@ -55,11 +55,9 @@ namespace AvaloniaGif
             }
 
             _gifDecoder = new GifDecoder(currentStream, CurrentCts.Token);
-            // _bgWorker = new GifBackgroundWorker(_gifDecoder, CurrentCts.Token);
             var pixSize = new PixelSize(_gifDecoder.Header.Dimensions.Width, _gifDecoder.Header.Dimensions.Height);
 
             _targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
-            // _bgWorker.CurrentFrameChanged += FrameChanged;
             GifPixelSize = pixSize;
 
             _totalTime = TimeSpan.Zero;
@@ -71,7 +69,7 @@ namespace AvaloniaGif
             }).ToList();
 
             _gifDecoder.RenderFrame(0, _targetBitmap);
-            
+
             if (!currentStream.CanSeek)
                 throw new InvalidDataException("The provided stream is not seekable.");
         }
@@ -107,40 +105,24 @@ namespace AvaloniaGif
             return assetLocator.Open(uri);
         }
 
-        public PixelSize GifPixelSize { get; private set; }
- 
-
-        public void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
-        {
-            var newVal = (IterationCount) e.NewValue;
-            IterationCount = newVal;
-        }
-
-        public void AutoStartChanged(AvaloniaPropertyChangedEventArgs e)
-        {
-            var newVal = (bool) e.NewValue;
-            AutoStart = newVal;
-        }
+        public PixelSize GifPixelSize { get; }
 
         public void Dispose()
         {
             CurrentCts.Cancel();
-
-            if (_streamCanDispose)
-            {
-                currentStream.Dispose();
-            }
-
-            // _bgWorker?.SendCommand(BgWorkerCommand.Dispose);
             _targetBitmap?.Dispose();
         }
-        
+
         [CanBeNull]
         public WriteableBitmap ProcessFrameTime(TimeSpan stopwatchElapsed)
         {
-            if (!IterationCount.IsInfinite & _iterationCount > IterationCount.Value)
+            if (!IterationCount.IsInfinite && _iterationCount > IterationCount.Value)
             {
-                // _state = BgWorkerState.Complete;
+                return null;
+            }
+
+            if (CurrentCts.IsCancellationRequested)
+            {
                 return null;
             }
 
@@ -151,7 +133,6 @@ namespace AvaloniaGif
 
             if (currentFrame == -1) currentFrame = 0;
 
- 
             if (_currentFrameIndex != currentFrame)
             {
                 _currentFrameIndex = currentFrame;
@@ -162,27 +143,9 @@ namespace AvaloniaGif
 
                 if (!IterationCount.IsInfinite && _totalFrameCount % _frameTimes.Count == 0)
                     _iterationCount++;
-
             }
 
-
             return _targetBitmap;
-
-            // _currentFrameIndex = (_currentFrameIndex + 1) % _gifDecoder.Frames.Count;
-
-            // CurrentFrameChanged?.Invoke();
-            //
-            // var targetDelay = _gifDecoder.Frames[_currentIndex].FrameDelay;
-            //
-            // var t1 = _timer.Elapsed;
-            //
-            // _gifDecoder.RenderFrame(_currentIndex);
-            //
-            // var t2 = _timer.Elapsed;
-            // var delta = t2 - t1;
-            //
-            // if (delta > targetDelay) return;
-            // Thread.Sleep(targetDelay - delta);
         }
     }
 }
