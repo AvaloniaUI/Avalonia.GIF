@@ -15,6 +15,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using Avalonia.Media.Imaging;
 using AvaloniaGif.Caching;
 using static AvaloniaGif.Extensions.StreamExtensions;
 
@@ -41,7 +42,6 @@ namespace AvaloniaGif.Decoding
 
         private readonly Stream _fileStream;
         private readonly CancellationToken _currentCtsToken;
-        private readonly object _lockObj;
         private readonly bool _hasFrameBackups;
 
         private int _gctSize, _bgIndex, _prevFrame;
@@ -74,7 +74,6 @@ namespace AvaloniaGif.Decoding
         {
             _fileStream = fileStream;
             _currentCtsToken = currentCtsToken;
-            _lockObj = new object();
 
             ProcessHeaderData();
             ProcessFrameData();
@@ -107,19 +106,14 @@ namespace AvaloniaGif.Decoding
 
         public void Dispose()
         {
-            lock (_lockObj)
-            {
-                Frames.Clear();
+            Frames.Clear();
 
-                _bitmapBackBuffer = null;
-                _prefixBuf = null;
-                _suffixBuf = null;
-                _pixelStack = null;
-                _indexBuf = null;
-                _prevFrameIndexBuf = null;
-
-                _fileStream?.Dispose();
-            }
+            _bitmapBackBuffer = null;
+            _prefixBuf = null;
+            _suffixBuf = null;
+            _pixelStack = null;
+            _indexBuf = null;
+            _prevFrameIndexBuf = null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -159,37 +153,37 @@ namespace AvaloniaGif.Decoding
             ClearArea(_gifDimensions);
         }
 
-        public void RenderFrame(int fIndex)
+        public void RenderFrame(int fIndex, WriteableBitmap writeableBitmap)
         {
-            lock (_lockObj)
-            {
-                if (_currentCtsToken.IsCancellationRequested)
-                    return;
+            if (_currentCtsToken.IsCancellationRequested)
+                return;
 
-                if (fIndex < 0 | fIndex >= Frames.Count)
-                    return;
+            if (fIndex < 0 | fIndex >= Frames.Count)
+                return;
 
-                if (fIndex == 0)
-                    ClearImage();
+            if (fIndex == 0)
+                ClearImage();
 
-                var tmpB = ArrayPool<byte>.Shared.Rent(MaxTempBuf);
+            var tmpB = ArrayPool<byte>.Shared.Rent(MaxTempBuf);
 
-                var curFrame = Frames[fIndex];
+            var curFrame = Frames[fIndex];
 
-                DisposePreviousFrame();
+            DisposePreviousFrame();
 
-                DecompressFrameToIndexBuffer(curFrame, _indexBuf, tmpB);
+            DecompressFrameToIndexBuffer(curFrame, _indexBuf, tmpB);
 
-                if (_hasFrameBackups & curFrame.ShouldBackup)
-                    Buffer.BlockCopy(_indexBuf, 0, _prevFrameIndexBuf, 0, curFrame.Dimensions.TotalPixels);
+            if (_hasFrameBackups & curFrame.ShouldBackup)
+                Buffer.BlockCopy(_indexBuf, 0, _prevFrameIndexBuf, 0, curFrame.Dimensions.TotalPixels);
 
-                DrawFrame(curFrame, _indexBuf);
+            DrawFrame(curFrame, _indexBuf);
 
-                _prevFrame = fIndex;
-                _hasNewFrame = true;
+            _prevFrame = fIndex;
+            _hasNewFrame = true;
 
-                ArrayPool<byte>.Shared.Return(tmpB);
-            }
+            ArrayPool<byte>.Shared.Return(tmpB);
+            
+            using var lockedBitmap = writeableBitmap.Lock();
+            WriteBackBufToFb(lockedBitmap.Address);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -249,7 +243,7 @@ namespace AvaloniaGif.Decoding
                 case FrameDisposal.Restore:
                     if (_hasFrameBackups)
                         DrawFrame(prevFrame, _prevFrameIndexBuf);
-                    break;  
+                    break;
             }
         }
 
@@ -401,14 +395,13 @@ namespace AvaloniaGif.Decoding
 
             if (!(_hasNewFrame & _bitmapBackBuffer != null)) return;
 
-            lock (_lockObj)
-                unsafe
-                {
-                    fixed (void* src = &_bitmapBackBuffer[0])
-                        Buffer.MemoryCopy(src, targetPointer.ToPointer(), (uint) _backBufferBytes,
-                            (uint) _backBufferBytes);
-                    _hasNewFrame = false;
-                }
+            unsafe
+            {
+                fixed (void* src = &_bitmapBackBuffer[0])
+                    Buffer.MemoryCopy(src, targetPointer.ToPointer(), (uint) _backBufferBytes,
+                        (uint) _backBufferBytes);
+                _hasNewFrame = false;
+            }
         }
 
         /// <summary>
@@ -419,8 +412,8 @@ namespace AvaloniaGif.Decoding
             var str = _fileStream;
             var tmpB = ArrayPool<byte>.Shared.Rent(MaxTempBuf);
             var tempBuf = tmpB.AsSpan();
-            
-            var _ = str.Read(tmpB, 0, 6);        
+
+            var _ = str.Read(tmpB, 0, 6);
 
             if (!tempBuf[..3].SequenceEqual(G87AMagic[..3].Span))
                 throw new InvalidGifStreamException("Not a GIF stream.");

@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using AvaloniaGif.Decoding;
+using JetBrains.Annotations;
 
 namespace AvaloniaGif
 {
@@ -17,10 +20,15 @@ namespace AvaloniaGif
         public Progress<int> Progress { get; private set; }
 
         bool _streamCanDispose;
+
         private GifDecoder _gifDecoder;
-        private GifBackgroundWorker _bgWorker;
+
         private WriteableBitmap _targetBitmap;
-        private bool _hasNewFrame;
+        private TimeSpan _totalTime;
+        private readonly List<TimeSpan> _frameTimes;
+        private uint _iterationCount;
+        private int _currentFrameIndex;
+        private uint _totalFrameCount;
 
         public CancellationTokenSource CurrentCts { get; private set; }
 
@@ -47,13 +55,25 @@ namespace AvaloniaGif
             }
 
             _gifDecoder = new GifDecoder(currentStream, CurrentCts.Token);
-            _bgWorker = new GifBackgroundWorker(_gifDecoder, CurrentCts.Token);
+            // _bgWorker = new GifBackgroundWorker(_gifDecoder, CurrentCts.Token);
             var pixSize = new PixelSize(_gifDecoder.Header.Dimensions.Width, _gifDecoder.Header.Dimensions.Height);
 
             _targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
-            _bgWorker.CurrentFrameChanged += FrameChanged;
+            // _bgWorker.CurrentFrameChanged += FrameChanged;
             GifPixelSize = pixSize;
-            Run();
+
+            _totalTime = TimeSpan.Zero;
+
+            _frameTimes = _gifDecoder.Frames.Select(frame =>
+            {
+                _totalTime = _totalTime.Add(frame.FrameDelay);
+                return _totalTime;
+            }).ToList();
+
+            _gifDecoder.RenderFrame(0, _targetBitmap);
+            
+            if (!currentStream.CanSeek)
+                throw new InvalidDataException("The provided stream is not seekable.");
         }
 
         private Stream GetStreamFromString(string str)
@@ -88,35 +108,7 @@ namespace AvaloniaGif
         }
 
         public PixelSize GifPixelSize { get; private set; }
-
-        public WriteableBitmap GetBitmap()
-        {
-            if (!_hasNewFrame) return null;
-            _hasNewFrame = false;
-            return _targetBitmap;
-        }
-
-        private void FrameChanged()
-        {
-            if (CurrentCts.IsCancellationRequested)
-            {
-                CurrentCts.Dispose();
-                return;
-            }
-
-            _hasNewFrame = true;
-
-            using (var lockedBitmap = _targetBitmap?.Lock())
-                _gifDecoder?.WriteBackBufToFb(lockedBitmap.Address);
-        }
-
-        private void Run()
-        {
-            if (!currentStream.CanSeek)
-                throw new ArgumentException("The stream is not seekable");
-
-            _bgWorker?.SendCommand(BgWorkerCommand.Play);
-        }
+ 
 
         public void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
         {
@@ -139,8 +131,58 @@ namespace AvaloniaGif
                 currentStream.Dispose();
             }
 
-            _bgWorker?.SendCommand(BgWorkerCommand.Dispose);
+            // _bgWorker?.SendCommand(BgWorkerCommand.Dispose);
             _targetBitmap?.Dispose();
+        }
+        
+        [CanBeNull]
+        public WriteableBitmap ProcessFrameTime(TimeSpan stopwatchElapsed)
+        {
+            if (!IterationCount.IsInfinite & _iterationCount > IterationCount.Value)
+            {
+                // _state = BgWorkerState.Complete;
+                return null;
+            }
+
+            var timeModulus = TimeSpan.FromTicks(stopwatchElapsed.Ticks % _totalTime.Ticks);
+            var targetFrame = _frameTimes.LastOrDefault(x => x <= timeModulus);
+
+            var currentFrame = _frameTimes.IndexOf(targetFrame);
+
+            if (currentFrame == -1) currentFrame = 0;
+
+ 
+            if (_currentFrameIndex != currentFrame)
+            {
+                _currentFrameIndex = currentFrame;
+
+                _gifDecoder.RenderFrame(_currentFrameIndex, _targetBitmap);
+
+                _totalFrameCount++;
+
+                if (!IterationCount.IsInfinite && _totalFrameCount % _frameTimes.Count == 0)
+                    _iterationCount++;
+
+            }
+
+
+            return _targetBitmap;
+
+            // _currentFrameIndex = (_currentFrameIndex + 1) % _gifDecoder.Frames.Count;
+
+            // CurrentFrameChanged?.Invoke();
+            //
+            // var targetDelay = _gifDecoder.Frames[_currentIndex].FrameDelay;
+            //
+            // var t1 = _timer.Elapsed;
+            //
+            // _gifDecoder.RenderFrame(_currentIndex);
+            //
+            // var t2 = _timer.Elapsed;
+            // var delta = t2 - t1;
+            //
+            // if (delta > targetDelay) return;
+            // Thread.Sleep(targetDelay - delta);
         }
     }
 }

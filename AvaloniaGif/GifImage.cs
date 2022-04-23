@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using Avalonia;
 using Avalonia.Animation;
@@ -21,7 +22,7 @@ namespace AvaloniaGif
             AvaloniaProperty.Register<GifImage, Stream>("SourceStream");
 
         public static readonly StyledProperty<IterationCount> IterationCountProperty =
-            AvaloniaProperty.Register<GifImage, IterationCount>("IterationCount");
+            AvaloniaProperty.Register<GifImage, IterationCount>("IterationCount", IterationCount.Infinite);
 
         private GifInstance gifInstance;
 
@@ -37,6 +38,7 @@ namespace AvaloniaGif
         private RenderTargetBitmap backingRTB;
         private bool _hasNewSource;
         private object? _newSource;
+        private Stopwatch _stopwatch;
 
         static GifImage()
         {
@@ -113,11 +115,16 @@ namespace AvaloniaGif
             {
                 StopAndDispose();
                 gifInstance = new GifInstance(_newSource);
+                gifInstance.IterationCount = IterationCount;
                 backingRTB = new RenderTargetBitmap(gifInstance.GifPixelSize, new Vector(96, 96));
                 _hasNewSource = false;
+
+                _stopwatch ??= new Stopwatch();
+                _stopwatch.Reset();
                 
                 Dispatcher.UIThread.Post(InvalidateMeasure, DispatcherPriority.Background);
                 Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
+
                 return;
             }
 
@@ -127,7 +134,14 @@ namespace AvaloniaGif
                 return;
             }
 
-            if (gifInstance.GetBitmap() is { } source && backingRTB is not null)
+            if (!_stopwatch.IsRunning)
+            {
+                _stopwatch.Start();
+            }
+
+            var currentFrame = gifInstance.ProcessFrameTime(_stopwatch.Elapsed);
+ 
+            if (currentFrame is { } source && backingRTB is not null)
             {
                 using var ctx = backingRTB.CreateDrawingContext(null);
                 var ts = new Rect(source.Size);
