@@ -267,6 +267,15 @@ namespace AvaloniaGif.Decoding
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void DecompressFrameToIndexBuffer(GifFrame curFrame, Span<byte> indexSpan, byte[] tempBuf)
         {
+            if(_currentCtsToken.IsCancellationRequested)
+                return;
+            
+            if (!_fileStream.CanRead)
+            {
+                Dispose();
+                return;
+            }
+            
             _fileStream.Position = curFrame.LZWStreamPosition;
             var totalPixels = curFrame.Dimensions.TotalPixels;
 
