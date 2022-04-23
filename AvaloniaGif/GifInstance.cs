@@ -36,6 +36,16 @@ namespace AvaloniaGif
                 _ => throw new InvalidDataException("Unsupported source object")
             };
 
+            if (!currentStream.CanRead)
+            {
+                throw new InvalidOperationException("Can't read the stream provided.");
+            }
+
+            if (currentStream.CanSeek)
+            {
+                currentStream.Seek(0, SeekOrigin.Begin);
+            }
+
             _gifDecoder = new GifDecoder(currentStream, CurrentCts.Token);
             _bgWorker = new GifBackgroundWorker(_gifDecoder, CurrentCts.Token);
             var pixSize = new PixelSize(_gifDecoder.Header.Dimensions.Width, _gifDecoder.Header.Dimensions.Height);

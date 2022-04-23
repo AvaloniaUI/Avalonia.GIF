@@ -118,7 +118,7 @@ namespace AvaloniaGif.Decoding
                 _indexBuf = null;
                 _prevFrameIndexBuf = null;
 
-                _fileStream?.Dispose();
+//                _fileStream?.Dispose();
             }
         }
 
@@ -551,7 +551,7 @@ namespace AvaloniaGif.Decoding
 
                 // Break the loop when the stream is not valid anymore.
                 if (_fileStream.Position >= _fileStream.Length & terminate == false)
-                    throw new InvalidProgramException("Reach the end of the filestream without trailer block.");
+                    throw new InvalidProgramException("Reach the end of the filestream without a trailer block.");
             } while (!terminate);
 
             ArrayPool<byte>.Shared.Return(tempBuf);
