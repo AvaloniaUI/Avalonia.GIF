@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,9 +31,9 @@ namespace AvaloniaGif.Caching
         private readonly bool _doSlidingExp;
         private readonly int? _maxEntries;
         private readonly IDictionary<K, CacheEntry<K, V>> _entries;
-        private readonly LinkedList<K> _keysInCreationOrder = new LinkedList<K>();
-        private readonly ReaderWriterLockSlim _wholeCacheLock = new ReaderWriterLockSlim();
-        private volatile bool _disposed = false;
+        private readonly LinkedList<K> _keysInCreationOrder = new();
+        private readonly ReaderWriterLockSlim _wholeCacheLock = new();
+        private volatile bool _disposed;
 
         public CacheImpl(CacheBuilder<K, V> builder)
         {
@@ -55,7 +54,7 @@ namespace AvaloniaGif.Caching
             
             if (_expiration.HasValue && _purgeInterval.HasValue)
             {
-                TimeSpan interval = _purgeInterval.Value;
+                var interval = _purgeInterval.Value;
                 Task.Run(() => PurgeExpiredEntriesAsync(interval));
             }
         }
