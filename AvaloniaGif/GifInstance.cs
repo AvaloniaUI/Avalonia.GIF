@@ -29,6 +29,7 @@ namespace AvaloniaGif
         private uint _iterationCount;
         private int _currentFrameIndex;
         private uint _totalFrameCount;
+        private readonly List<ulong> _colorTableIDList;
 
         public CancellationTokenSource CurrentCts { get; }
 
@@ -43,11 +44,12 @@ namespace AvaloniaGif
                 string str => GetStreamFromString(str),
                 _ => throw new InvalidDataException("Unsupported source object")
             };
-
+            
+            if (!currentStream.CanSeek)
+                throw new InvalidDataException("The provided stream is not seekable.");
+            
             if (!currentStream.CanRead)
-            {
                 throw new InvalidOperationException("Can't read the stream provided.");
-            }
 
             if (currentStream.CanSeek)
             {
@@ -70,8 +72,18 @@ namespace AvaloniaGif
 
             _gifDecoder.RenderFrame(0, _targetBitmap);
 
-            if (!currentStream.CanSeek)
-                throw new InvalidDataException("The provided stream is not seekable.");
+            
+
+            // Save the color table cache ID's to refresh them on cache while
+            // the image is either stopped/paused.
+            _colorTableIDList = _gifDecoder.Frames
+                .Where(p => p.IsLocalColorTableUsed)
+                .Select(p => p.LocalColorTableCacheID)
+                .ToList();
+            
+            
+            if (_gifDecoder.Header.HasGlobalColorTable)
+                _colorTableIDList.Add(_gifDecoder.Header.GlobalColorTableCacheID);
         }
 
         private Stream GetStreamFromString(string str)
@@ -135,6 +147,12 @@ namespace AvaloniaGif
 
             if (_currentFrameIndex != currentFrame)
             {
+                if (currentFrame - _currentFrameIndex > 1)
+                {
+                    foreach (var cacheId in _colorTableIDList)
+                        GifDecoder.GlobalColorTableCache.TryGetValue(cacheId, out var _);
+                }
+                
                 _currentFrameIndex = currentFrame;
 
                 _gifDecoder.RenderFrame(_currentFrameIndex, _targetBitmap);
@@ -147,5 +165,7 @@ namespace AvaloniaGif
 
             return _targetBitmap;
         }
+        
+        
     }
 }

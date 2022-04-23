@@ -213,15 +213,15 @@ namespace AvaloniaGif
         private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
             var image = e.Sender as GifImage;
-            
+
             if (image == null)
                 return;
-            
+
             if (e.NewValue is null)
             {
                 return;
             }
-            
+
             image._hasNewSource = true;
             image._newSource = e.NewValue;
             Dispatcher.UIThread.Post(image.InvalidateVisual, DispatcherPriority.Background);
