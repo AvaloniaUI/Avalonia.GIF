@@ -44,10 +44,10 @@ namespace AvaloniaGif
                 string str => GetStreamFromString(str),
                 _ => throw new InvalidDataException("Unsupported source object")
             };
-            
+
             if (!currentStream.CanSeek)
                 throw new InvalidDataException("The provided stream is not seekable.");
-            
+
             if (!currentStream.CanRead)
                 throw new InvalidOperationException("Can't read the stream provided.");
 
@@ -72,7 +72,6 @@ namespace AvaloniaGif
 
             _gifDecoder.RenderFrame(0, _targetBitmap);
 
-            
 
             // Save the color table cache ID's to refresh them on cache while
             // the image is either stopped/paused.
@@ -80,8 +79,8 @@ namespace AvaloniaGif
                 .Where(p => p.IsLocalColorTableUsed)
                 .Select(p => p.LocalColorTableCacheID)
                 .ToList();
-            
-            
+
+
             if (_gifDecoder.Header.HasGlobalColorTable)
                 _colorTableIDList.Add(_gifDecoder.Header.GlobalColorTableCacheID);
         }
@@ -147,12 +146,14 @@ namespace AvaloniaGif
 
             if (_currentFrameIndex != currentFrame)
             {
+                // We skipped too much frames in between render updates
+                // so refresh the cache.
                 if (currentFrame - _currentFrameIndex > 1)
                 {
                     foreach (var cacheId in _colorTableIDList)
                         GifDecoder.GlobalColorTableCache.TryGetValue(cacheId, out var _);
                 }
-                
+
                 _currentFrameIndex = currentFrame;
 
                 _gifDecoder.RenderFrame(_currentFrameIndex, _targetBitmap);
@@ -165,7 +166,5 @@ namespace AvaloniaGif
 
             return _targetBitmap;
         }
-        
-        
     }
 }
