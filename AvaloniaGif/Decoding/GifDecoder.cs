@@ -118,7 +118,7 @@ namespace AvaloniaGif.Decoding
                 _indexBuf = null;
                 _prevFrameIndexBuf = null;
 
-//                _fileStream?.Dispose();
+                _fileStream?.Dispose();
             }
         }
 
@@ -267,15 +267,6 @@ namespace AvaloniaGif.Decoding
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void DecompressFrameToIndexBuffer(GifFrame curFrame, Span<byte> indexSpan, byte[] tempBuf)
         {
-            if(_currentCtsToken.IsCancellationRequested)
-                return;
-            
-            if (!_fileStream.CanRead)
-            {
-                Dispose();
-                return;
-            }
-            
             _fileStream.Position = curFrame.LZWStreamPosition;
             var totalPixels = curFrame.Dimensions.TotalPixels;
 
@@ -551,7 +542,7 @@ namespace AvaloniaGif.Decoding
 
                 // Break the loop when the stream is not valid anymore.
                 if (_fileStream.Position >= _fileStream.Length & terminate == false)
-                    throw new InvalidProgramException("Reach the end of the filestream without a trailer block.");
+                    throw new InvalidProgramException("Reach the end of the filestream without trailer block.");
             } while (!terminate);
 
             ArrayPool<byte>.Shared.Return(tempBuf);

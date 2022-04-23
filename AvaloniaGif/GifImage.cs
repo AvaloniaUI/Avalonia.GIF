@@ -35,6 +35,8 @@ namespace AvaloniaGif
             AvaloniaProperty.Register<GifImage, Stretch>("Stretch");
 
         private RenderTargetBitmap backingRTB;
+        private bool _hasNewSource;
+        private object? _newSource;
 
         static GifImage()
         {
@@ -43,9 +45,9 @@ namespace AvaloniaGif
             SourceStreamProperty.Changed.Subscribe(SourceChanged);
             IterationCountProperty.Changed.Subscribe(IterationCountChanged);
             AutoStartProperty.Changed.Subscribe(AutoStartChanged);
-            AffectsRender<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
-            AffectsArrange<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
-            AffectsMeasure<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
+            AffectsRender<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty, StretchProperty);
+            AffectsArrange<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty, StretchProperty);
+            AffectsMeasure<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty, StretchProperty);
         }
 
         public string SourceUriRaw
@@ -102,13 +104,29 @@ namespace AvaloniaGif
             var image = e.Sender as GifImage;
             if (image is null || e.NewValue is not IterationCount iterationCount)
                 return;
-            image.gifInstance.IterationCount = iterationCount;
+            image.IterationCount = iterationCount;
         }
 
         public override void Render(DrawingContext context)
         {
-            if (gifInstance is null || (gifInstance.CurrentCts?.IsCancellationRequested ?? true))
+            if (_hasNewSource)
+            {
+                gifInstance?.Dispose();
+                backingRTB?.Dispose();
+                gifInstance = new GifInstance(_newSource);
+                backingRTB = new RenderTargetBitmap(gifInstance.GifPixelSize, new Vector(96, 96));
+                _hasNewSource = false;
+                
+                Dispatcher.UIThread.Post(InvalidateMeasure, DispatcherPriority.Background);
+                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
                 return;
+            }
+
+            if (gifInstance is null || (gifInstance.CurrentCts?.IsCancellationRequested ?? true))
+            {
+                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
+                return;
+            }
 
             if (gifInstance.GetBitmap() is { } source && backingRTB is not null)
             {
@@ -178,11 +196,9 @@ namespace AvaloniaGif
             if (image == null)
                 return;
 
-            image.gifInstance?.Dispose();
-            image.backingRTB?.Dispose();
-            image.backingRTB = null;
-            image.gifInstance = new GifInstance(e.NewValue);
-            image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
+            image._hasNewSource = true;
+            image._newSource = e.NewValue;
+            Dispatcher.UIThread.Post(image.InvalidateVisual, DispatcherPriority.Background);
         }
     }
 }
