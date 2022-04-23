@@ -153,17 +153,12 @@ namespace AvaloniaGif
 
         private void MainLoop()
         {
-            while (true)
+            while (!_shouldStop || !_ctoken.IsCancellationRequested)
             {
-                if (_shouldStop || _ctoken.IsCancellationRequested)
-                {
-                    DoDispose();
-                    break;
-                }
-
                 CheckCommands();
                 DoStates();
             }
+            DoDispose();
         }
 
         private void DoStates()
@@ -204,7 +199,7 @@ namespace AvaloniaGif
             {
                 case BgWorkerCommand.Dispose:
                     DoDispose();
-                    break;
+                    return;
                 case BgWorkerCommand.Play:
                     switch (_state)
                     {

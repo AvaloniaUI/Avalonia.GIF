@@ -111,8 +111,7 @@ namespace AvaloniaGif
         {
             if (_hasNewSource)
             {
-                gifInstance?.Dispose();
-                backingRTB?.Dispose();
+                StopAndDispose();
                 gifInstance = new GifInstance(_newSource);
                 backingRTB = new RenderTargetBitmap(gifInstance.GifPixelSize, new Vector(96, 96));
                 _hasNewSource = false;
@@ -188,6 +187,12 @@ namespace AvaloniaGif
             }
 
             return new Size();
+        }
+
+        public void StopAndDispose()
+        {
+            gifInstance?.Dispose();
+            backingRTB?.Dispose();
         }
 
         private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
