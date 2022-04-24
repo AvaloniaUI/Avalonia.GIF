@@ -10,8 +10,8 @@ namespace AvaloniaGif.Decoding
         public long LZWStreamPosition;
         public TimeSpan FrameDelay;
         public FrameDisposal FrameDisposalMethod;
-        public ulong LocalColorTableCacheID;
         public bool ShouldBackup;
         public GifRect Dimensions;
+        public GifColor[] LocalColorTable;
     }
 }

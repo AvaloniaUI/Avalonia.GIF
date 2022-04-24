@@ -14,22 +14,16 @@ namespace AvaloniaGif
 {
     internal class GifInstance : IDisposable
     {
-        private readonly Stream currentStream;
         public IterationCount IterationCount { get; set; }
         public bool AutoStart { get; private set; } = true;
-        public Progress<int> Progress { get; private set; }
-
-        bool _streamCanDispose;
-
-        private GifDecoder _gifDecoder;
-
-        private WriteableBitmap _targetBitmap;
+        private readonly GifDecoder _gifDecoder;
+        private readonly WriteableBitmap _targetBitmap;
         private TimeSpan _totalTime;
         private readonly List<TimeSpan> _frameTimes;
         private uint _iterationCount;
         private int _currentFrameIndex;
         private uint _totalFrameCount;
-        private readonly List<ulong> _colorTableIDList;
+        private readonly List<ulong> _colorTableIdList;
 
         public CancellationTokenSource CurrentCts { get; }
 
@@ -37,7 +31,7 @@ namespace AvaloniaGif
         {
             CurrentCts = new CancellationTokenSource();
 
-            currentStream = newValue switch
+            var currentStream = newValue switch
             {
                 Stream s => s,
                 Uri u => GetStreamFromUri(u),
@@ -72,17 +66,15 @@ namespace AvaloniaGif
 
             _gifDecoder.RenderFrame(0, _targetBitmap);
 
-
             // Save the color table cache ID's to refresh them on cache while
-            // the image is either stopped/paused.
-            _colorTableIDList = _gifDecoder.Frames
-                .Where(p => p.IsLocalColorTableUsed)
-                .Select(p => p.LocalColorTableCacheID)
-                .ToList();
+            // // the image is either stopped/paused.
+            // _colorTableIdList = _gifDecoder.Frames
+            //     .Where(p => p.IsLocalColorTableUsed)
+            //     .Select(p => p.LocalColorTableCacheID)
+            //     .ToList();
 
-
-            if (_gifDecoder.Header.HasGlobalColorTable)
-                _colorTableIDList.Add(_gifDecoder.Header.GlobalColorTableCacheID);
+            // if (_gifDecoder.Header.HasGlobalColorTable)
+            //     _colorTableIdList.Add(_gifDecoder.Header.GlobalColorTableCacheID);
         }
 
         private Stream GetStreamFromString(string str)
@@ -97,10 +89,6 @@ namespace AvaloniaGif
 
         private Stream GetStreamFromUri(Uri uri)
         {
-            _streamCanDispose = true;
-
-            Progress = new Progress<int>();
-
             var uriString = uri.OriginalString.Trim();
 
             if (!uriString.StartsWith("resm") && !uriString.StartsWith("avares"))
@@ -139,19 +127,15 @@ namespace AvaloniaGif
 
             var timeModulus = TimeSpan.FromTicks(stopwatchElapsed.Ticks % _totalTime.Ticks);
             var targetFrame = _frameTimes.LastOrDefault(x => x <= timeModulus);
-
             var currentFrame = _frameTimes.IndexOf(targetFrame);
-
             if (currentFrame == -1) currentFrame = 0;
 
             if (_currentFrameIndex != currentFrame)
             {
                 // We skipped too much frames in between render updates
-                // so refresh the cache.
+                // so clear the frame and redraw the previous one.
                 if (currentFrame - _currentFrameIndex > 1)
                 {
-                    foreach (var cacheId in _colorTableIDList)
-                        GifDecoder.GlobalColorTableCache.TryGetValue(cacheId, out var _);
                 }
 
                 _currentFrameIndex = currentFrame;

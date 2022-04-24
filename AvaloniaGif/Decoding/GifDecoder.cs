@@ -48,7 +48,8 @@ namespace AvaloniaGif.Decoding
         private bool _gctUsed;
 
         private GifRect _gifDimensions;
-        private ulong _globalColorTable;
+
+        // private ulong _globalColorTable;
         private readonly int _backBufferBytes;
         private GifColor[] _bitmapBackBuffer;
 
@@ -63,12 +64,12 @@ namespace AvaloniaGif.Decoding
 
         public readonly List<GifFrame> Frames = new();
 
-        internal static readonly ICache<ulong, GifColor[]> GlobalColorTableCache
-            = Caches.KeyValue<ulong, GifColor[]>()
-                .WithBackgroundPurge(TimeSpan.FromSeconds(30))
-                .WithExpiration(TimeSpan.FromSeconds(10))
-                .WithSlidingExpiration()
-                .Build();
+        // internal static readonly ICache<ulong, GifColor[]> GlobalColorTableCache
+        //     = Caches.KeyValue<ulong, GifColor[]>()
+        //         .WithBackgroundPurge(TimeSpan.FromSeconds(30))
+        //         .WithExpiration(TimeSpan.FromSeconds(10))
+        //         .WithSlidingExpiration()
+        //         .Build();
 
         public GifDecoder(Stream fileStream, CancellationToken currentCtsToken)
         {
@@ -153,7 +154,7 @@ namespace AvaloniaGif.Decoding
             ClearArea(_gifDimensions);
         }
 
-        public void RenderFrame(int fIndex, WriteableBitmap writeableBitmap)
+        public void RenderFrame(int fIndex, WriteableBitmap writeableBitmap, bool forceClear = false)
         {
             if (_currentCtsToken.IsCancellationRequested)
                 return;
@@ -161,7 +162,7 @@ namespace AvaloniaGif.Decoding
             if (fIndex < 0 | fIndex >= Frames.Count)
                 return;
 
-            if (fIndex == 0)
+            if (fIndex == 0 || forceClear)
                 ClearImage();
 
             var tmpB = ArrayPool<byte>.Shared.Rent(MaxTempBuf);
@@ -181,7 +182,7 @@ namespace AvaloniaGif.Decoding
             _hasNewFrame = true;
 
             ArrayPool<byte>.Shared.Return(tmpB);
-            
+
             using var lockedBitmap = writeableBitmap.Lock();
             WriteBackBufToFb(lockedBitmap.Address);
         }
@@ -189,10 +190,9 @@ namespace AvaloniaGif.Decoding
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void DrawFrame(GifFrame curFrame, Memory<byte> frameIndexSpan)
         {
-            var activeColorTableHash =
-                curFrame.IsLocalColorTableUsed ? curFrame.LocalColorTableCacheID : _globalColorTable;
-            var activeColorTable = GlobalColorTableCache.Get(activeColorTableHash);
-
+            var activeColorTable =
+                curFrame.IsLocalColorTableUsed ? curFrame.LocalColorTable : Header.GlobarColorTable;
+ 
             var cX = curFrame.Dimensions.X;
             var cY = curFrame.Dimensions.Y;
             var cH = curFrame.Dimensions.Height;
@@ -388,7 +388,7 @@ namespace AvaloniaGif.Decoding
         /// <summary>
         /// Directly copies the <see cref="GifColor"/> struct array to a bitmap IntPtr.
         /// </summary>
-        public void WriteBackBufToFb(IntPtr targetPointer)
+        private void WriteBackBufToFb(IntPtr targetPointer)
         {
             if (_currentCtsToken.IsCancellationRequested)
                 return;
@@ -425,14 +425,12 @@ namespace AvaloniaGif.Decoding
 
             ProcessScreenDescriptor(tmpB);
 
-            if (_gctUsed)
-                _globalColorTable = ProcessColorTable(ref str, tmpB, _gctSize);
-
             Header = new GifHeader
             {
                 Dimensions = _gifDimensions,
                 HasGlobalColorTable = _gctUsed,
-                GlobalColorTableCacheID = _globalColorTable,
+                // GlobalColorTableCacheID = _globalColorTable,
+                GlobarColorTable = ProcessColorTable(ref str, tmpB, _gctSize),
                 GlobalColorTableSize = _gctSize,
                 BackgroundColorIndex = _bgIndex,
                 HeaderSize = _fileStream.Position
@@ -444,7 +442,7 @@ namespace AvaloniaGif.Decoding
         /// <summary>
         /// Parses colors from file stream to target color table.
         /// </summary> 
-        private static ulong ProcessColorTable(ref Stream stream, byte[] rawBufSpan, int nColors)
+        private static GifColor[] ProcessColorTable(ref Stream stream, byte[] rawBufSpan, int nColors)
         {
             var nBytes = 3 * nColors;
             var target = new GifColor[nColors];
@@ -468,9 +466,7 @@ namespace AvaloniaGif.Decoding
                 target[i++] = new GifColor(r, g, b);
             }
 
-            GlobalColorTableCache.Set(tableHash, target);
-
-            return tableHash;
+            return target;
         }
 
         /// <summary>
@@ -567,7 +563,7 @@ namespace AvaloniaGif.Decoding
             currentFrame.LocalColorTableSize = (int) Math.Pow(2, (packed & 0x07) + 1);
 
             if (currentFrame.IsLocalColorTableUsed)
-                currentFrame.LocalColorTableCacheID =
+                currentFrame.LocalColorTable =
                     ProcessColorTable(ref str, tempBuf, currentFrame.LocalColorTableSize);
 
             currentFrame.LZWMinCodeSize = str.ReadByteS(tempBuf);

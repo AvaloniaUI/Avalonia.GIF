@@ -112,6 +112,9 @@ namespace AvaloniaGif
 
         public override void Render(DrawingContext context)
         {
+            Dispatcher.UIThread.Post(InvalidateMeasure, DispatcherPriority.Background);
+            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
+            
             if (_hasNewSource)
             {
                 StopAndDispose();
@@ -123,15 +126,12 @@ namespace AvaloniaGif
                 _stopwatch ??= new Stopwatch();
                 _stopwatch.Reset();
 
-                Dispatcher.UIThread.Post(InvalidateMeasure, DispatcherPriority.Background);
-                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
 
                 return;
             }
 
             if (gifInstance is null || (gifInstance.CurrentCts?.IsCancellationRequested ?? true))
             {
-                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
                 return;
             }
 
@@ -167,8 +167,6 @@ namespace AvaloniaGif
 
                 context.DrawImage(backingRTB, sourceRect, destRect, interpolationMode);
             }
-
-            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
         }
 
         /// <summary>
