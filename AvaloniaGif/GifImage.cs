@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using Avalonia;
 using Avalonia.Animation;
@@ -21,7 +22,7 @@ namespace AvaloniaGif
             AvaloniaProperty.Register<GifImage, Stream>("SourceStream");
 
         public static readonly StyledProperty<IterationCount> IterationCountProperty =
-            AvaloniaProperty.Register<GifImage, IterationCount>("IterationCount");
+            AvaloniaProperty.Register<GifImage, IterationCount>("IterationCount", IterationCount.Infinite);
 
         private GifInstance gifInstance;
 
@@ -37,6 +38,7 @@ namespace AvaloniaGif
         private RenderTargetBitmap backingRTB;
         private bool _hasNewSource;
         private object? _newSource;
+        private Stopwatch _stopwatch;
 
         static GifImage()
         {
@@ -104,30 +106,43 @@ namespace AvaloniaGif
             var image = e.Sender as GifImage;
             if (image is null || e.NewValue is not IterationCount iterationCount)
                 return;
+
             image.IterationCount = iterationCount;
         }
 
         public override void Render(DrawingContext context)
         {
+            Dispatcher.UIThread.Post(InvalidateMeasure, DispatcherPriority.Background);
+            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
+            
             if (_hasNewSource)
             {
                 StopAndDispose();
                 gifInstance = new GifInstance(_newSource);
+                gifInstance.IterationCount = IterationCount;
                 backingRTB = new RenderTargetBitmap(gifInstance.GifPixelSize, new Vector(96, 96));
                 _hasNewSource = false;
-                
-                Dispatcher.UIThread.Post(InvalidateMeasure, DispatcherPriority.Background);
-                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
+
+                _stopwatch ??= new Stopwatch();
+                _stopwatch.Reset();
+
+
                 return;
             }
 
             if (gifInstance is null || (gifInstance.CurrentCts?.IsCancellationRequested ?? true))
             {
-                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
                 return;
             }
 
-            if (gifInstance.GetBitmap() is { } source && backingRTB is not null)
+            if (!_stopwatch.IsRunning)
+            {
+                _stopwatch.Start();
+            }
+
+            var currentFrame = gifInstance.ProcessFrameTime(_stopwatch.Elapsed);
+
+            if (currentFrame is { } source && backingRTB is { })
             {
                 using var ctx = backingRTB.CreateDrawingContext(null);
                 var ts = new Rect(source.Size);
@@ -152,8 +167,6 @@ namespace AvaloniaGif
 
                 context.DrawImage(backingRTB, sourceRect, destRect, interpolationMode);
             }
-
-            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -198,8 +211,14 @@ namespace AvaloniaGif
         private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
             var image = e.Sender as GifImage;
+
             if (image == null)
                 return;
+
+            if (e.NewValue is null)
+            {
+                return;
+            }
 
             image._hasNewSource = true;
             image._newSource = e.NewValue;

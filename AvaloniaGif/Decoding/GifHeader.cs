@@ -13,5 +13,7 @@ namespace AvaloniaGif.Decoding
         internal int Iterations = -1;
         public GifRepeatBehavior IterationCount;
         public GifRect Dimensions;
+        private GifColor[] _globarColorTable;
+        public GifColor[] GlobarColorTable;
     }
 }
