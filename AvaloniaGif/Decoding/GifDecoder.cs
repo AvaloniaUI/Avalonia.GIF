@@ -16,7 +16,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using Avalonia.Media.Imaging;
-using AvaloniaGif.Caching;
 using static AvaloniaGif.Extensions.StreamExtensions;
 
 namespace AvaloniaGif.Decoding
@@ -35,7 +34,6 @@ namespace AvaloniaGif.Decoding
         private static readonly TimeSpan FrameDelayThreshold = TimeSpan.FromMilliseconds(10);
         private static readonly TimeSpan FrameDelayDefault = TimeSpan.FromMilliseconds(100);
         private static readonly GifColor TransparentColor = new(0, 0, 0, 0);
-        private static readonly XXHash64 Hasher = new();
         private static readonly int MaxTempBuf = 768;
         private static readonly int MaxStackSize = 4096;
         private static readonly int MaxBits = 4097;
@@ -63,13 +61,6 @@ namespace AvaloniaGif.Decoding
         public GifHeader Header { get; private set; }
 
         public readonly List<GifFrame> Frames = new();
-
-        // internal static readonly ICache<ulong, GifColor[]> GlobalColorTableCache
-        //     = Caches.KeyValue<ulong, GifColor[]>()
-        //         .WithBackgroundPurge(TimeSpan.FromSeconds(30))
-        //         .WithExpiration(TimeSpan.FromSeconds(10))
-        //         .WithSlidingExpiration()
-        //         .Build();
 
         public GifDecoder(Stream fileStream, CancellationToken currentCtsToken)
         {
@@ -452,13 +443,9 @@ namespace AvaloniaGif.Decoding
             if (n < nBytes)
                 throw new InvalidOperationException("Wrong color table bytes.");
 
-            Hasher.ComputeHash(rawBufSpan, 0, nBytes);
-
-            var tableHash = Hasher.HashUInt64;
-
             int i = 0, j = 0;
 
-            while (i < nColors)
+            while (i < nColors )
             {
                 var r = rawBufSpan[j++];
                 var g = rawBufSpan[j++];
