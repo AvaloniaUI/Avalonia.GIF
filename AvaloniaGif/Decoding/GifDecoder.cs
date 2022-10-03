@@ -1,6 +1,6 @@
 // This source file's Lempel-Ziv-Welch algorithm is derived from Chromium's Android GifPlayer
 // as seen here (https://github.com/chromium/chromium/blob/master/third_party/gif_player/src/jp/tomorrowkey/android/gifplayer)
-// Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
+// Licensed under the Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
 // Copyright (C) 2015 The Gifplayer Authors. All Rights Reserved.
 
 // The rest of the source file is licensed under MIT License.
