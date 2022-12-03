@@ -12,7 +12,7 @@ using JetBrains.Annotations;
 
 namespace AvaloniaGif
 {
-    internal class GifInstance : IDisposable
+    public class GifInstance : IDisposable
     {
         public IterationCount IterationCount { get; set; }
         public bool AutoStart { get; private set; } = true;
@@ -22,33 +22,36 @@ namespace AvaloniaGif
         private readonly List<TimeSpan> _frameTimes;
         private uint _iterationCount;
         private int _currentFrameIndex;
-        private uint _totalFrameCount;
         private readonly List<ulong> _colorTableIdList;
 
         public CancellationTokenSource CurrentCts { get; }
 
-        public GifInstance(object newValue)
+        internal GifInstance(object newValue) : this(newValue switch
         {
-            CurrentCts = new CancellationTokenSource();
+            Stream s => s,
+            Uri u => GetStreamFromUri(u),
+            string str => GetStreamFromString(str),
+            _ => throw new InvalidDataException("Unsupported source object")
+        })
+        { }
 
-            var currentStream = newValue switch
-            {
-                Stream s => s,
-                Uri u => GetStreamFromUri(u),
-                string str => GetStreamFromString(str),
-                _ => throw new InvalidDataException("Unsupported source object")
-            };
+        public GifInstance(string uri) : this(GetStreamFromString(uri))
+        { }
 
+        public GifInstance(Uri uri) : this(GetStreamFromUri(uri))
+        { }
+
+        public GifInstance(Stream currentStream)
+        {
             if (!currentStream.CanSeek)
                 throw new InvalidDataException("The provided stream is not seekable.");
 
             if (!currentStream.CanRead)
                 throw new InvalidOperationException("Can't read the stream provided.");
 
-            if (currentStream.CanSeek)
-            {
-                currentStream.Seek(0, SeekOrigin.Begin);
-            }
+            currentStream.Seek(0, SeekOrigin.Begin);
+
+            CurrentCts = new CancellationTokenSource();
 
             _gifDecoder = new GifDecoder(currentStream, CurrentCts.Token);
             var pixSize = new PixelSize(_gifDecoder.Header.Dimensions.Width, _gifDecoder.Header.Dimensions.Height);
@@ -77,7 +80,7 @@ namespace AvaloniaGif
             //     _colorTableIdList.Add(_gifDecoder.Header.GlobalColorTableCacheID);
         }
 
-        private Stream GetStreamFromString(string str)
+        private static Stream GetStreamFromString(string str)
         {
             if (!Uri.TryCreate(str, UriKind.RelativeOrAbsolute, out var res))
             {
@@ -87,7 +90,7 @@ namespace AvaloniaGif
             return GetStreamFromUri(res);
         }
 
-        private Stream GetStreamFromUri(Uri uri)
+        private static Stream GetStreamFromUri(Uri uri)
         {
             var uriString = uri.OriginalString.Trim();
 
@@ -103,6 +106,8 @@ namespace AvaloniaGif
 
             return assetLocator.Open(uri);
         }
+
+        public int GifFrameCount => _frameTimes.Count;
 
         public PixelSize GifPixelSize { get; }
 
@@ -125,28 +130,20 @@ namespace AvaloniaGif
                 return null;
             }
 
-            var timeModulus = TimeSpan.FromTicks(stopwatchElapsed.Ticks % _totalTime.Ticks);
+            var elapsedTicks = stopwatchElapsed.Ticks;
+
+            var timeModulus = TimeSpan.FromTicks(elapsedTicks % _totalTime.Ticks);
             var targetFrame = _frameTimes.LastOrDefault(x => x <= timeModulus);
             var currentFrame = _frameTimes.IndexOf(targetFrame);
             if (currentFrame == -1) currentFrame = 0;
 
-            if (_currentFrameIndex != currentFrame)
-            {
-                // We skipped too much frames in between render updates
-                // so clear the frame and redraw the previous one.
-                if (currentFrame - _currentFrameIndex > 1)
-                {
-                }
+            if (_currentFrameIndex == currentFrame)
+                return _targetBitmap;
 
-                _currentFrameIndex = currentFrame;
+            _iterationCount = (uint)(elapsedTicks / _totalTime.Ticks);
 
-                _gifDecoder.RenderFrame(_currentFrameIndex, _targetBitmap);
-
-                _totalFrameCount++;
-
-                if (!IterationCount.IsInfinite && _totalFrameCount % _frameTimes.Count == 0)
-                    _iterationCount++;
-            }
+            _gifDecoder.RenderFrame(currentFrame, _targetBitmap);
+            _currentFrameIndex = currentFrame;
 
             return _targetBitmap;
         }
