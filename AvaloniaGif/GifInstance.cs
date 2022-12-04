@@ -142,8 +142,13 @@ namespace AvaloniaGif
 
             _iterationCount = (uint)(elapsedTicks / _totalTime.Ticks);
 
-            _gifDecoder.RenderFrame(currentFrame, _targetBitmap);
-            _currentFrameIndex = currentFrame;
+            return ProcessFrameIndex(currentFrame);
+        }
+
+        internal WriteableBitmap ProcessFrameIndex(int frameIndex)
+        {
+            _gifDecoder.RenderFrame(frameIndex, _targetBitmap);
+            _currentFrameIndex = frameIndex;
 
             return _targetBitmap;
         }

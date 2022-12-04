@@ -56,7 +56,7 @@ namespace AvaloniaGif.Decoding
         private byte[] _suffixBuf;
         private byte[] _pixelStack;
         private byte[] _indexBuf;
-        private byte[] _prevFrameIndexBuf;
+        private byte[] _backupFrameIndexBuf;
         private volatile bool _hasNewFrame;
 
         public GifHeader Header { get; private set; }
@@ -90,7 +90,7 @@ namespace AvaloniaGif.Decoding
             _indexBuf = new byte[pixelCount];
 
             if (_hasFrameBackups)
-                _prevFrameIndexBuf = new byte[pixelCount];
+                _backupFrameIndexBuf = new byte[pixelCount];
 
             _prefixBuf = new short[MaxStackSize];
             _suffixBuf = new byte[MaxStackSize];
@@ -108,7 +108,7 @@ namespace AvaloniaGif.Decoding
             _suffixBuf = null;
             _pixelStack = null;
             _indexBuf = null;
-            _prevFrameIndexBuf = null;
+            _backupFrameIndexBuf = null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -197,7 +197,7 @@ namespace AvaloniaGif.Decoding
 
             if (_hasFrameBackups & curFrame.ShouldBackup)
             {
-                Buffer.BlockCopy(_indexBuf, 0, _prevFrameIndexBuf, 0, curFrame.Dimensions.TotalPixels);
+                Buffer.BlockCopy(_indexBuf, 0, _backupFrameIndexBuf, 0, curFrame.Dimensions.TotalPixels);
                 _backupFrame = idx;
             }
 
@@ -271,7 +271,7 @@ namespace AvaloniaGif.Decoding
                     break;
                 case FrameDisposal.Restore:
                     if (_hasFrameBackups && _backupFrame != -1)
-                        DrawFrame(Frames[_backupFrame], _prevFrameIndexBuf);
+                        DrawFrame(Frames[_backupFrame], _backupFrameIndexBuf);
                     else
                         ClearArea(prevFrame.Dimensions);
                     break;
