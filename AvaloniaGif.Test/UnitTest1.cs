@@ -2,6 +2,7 @@
 using ApprovalTests;
 using ApprovalTests.Reporters;
 using ApprovalUtilities.Utilities;
+using Avalonia.Animation;
 using NUnit.Framework;
 using System.Reflection;
 using UnitTest.Base.Apps;
@@ -78,6 +79,51 @@ namespace AvaloniaGif.Test
             }
         }
 
+        [Test]
+        [RunOnUI]
+        [TestCase("all_none.gif")]
+        public void Timespan(string filename)
+        {
+            var imageStream = Open(filename);
+            var imageInstance = new GifInstance(imageStream);
+            imageInstance.IterationCount = IterationCount.Infinite;
+
+            var times = new[] {
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(0).Ticks+0),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(0).Ticks+1),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(1).Ticks-1),
+
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(1).Ticks+0),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(1).Ticks+1),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(2).Ticks-1),
+
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(2).Ticks+0),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(2).Ticks+1),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(3).Ticks-1),
+
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(3).Ticks+0),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(3).Ticks+1),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(4).Ticks-1),
+
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(4).Ticks+0),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(4).Ticks+1),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(5).Ticks-1),
+
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(5).Ticks+0),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(5).Ticks+1),
+                TimeSpan.FromTicks(TimeSpan.FromSeconds(6).Ticks-1),
+            };
+
+            foreach (var time in times)
+            {
+                var img = imageInstance.ProcessFrameTime(time);
+
+                Approvals.Verify(
+                    new ApprovalImageWriter(img, $"{Path.GetFileNameWithoutExtension(filename)}@{time.Seconds % 4}"),
+                    Approvals.GetDefaultNamer(),
+                    new DiffToolReporter(DiffEngine.DiffTool.WinMerge));
+            }
+        }
 
         public static IEnumerable<T> Concat<T>(params IEnumerable<T>[] arrays)
         {

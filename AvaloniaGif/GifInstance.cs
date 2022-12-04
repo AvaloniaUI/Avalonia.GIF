@@ -131,9 +131,8 @@ namespace AvaloniaGif
             }
 
             var elapsedTicks = stopwatchElapsed.Ticks;
-
             var timeModulus = TimeSpan.FromTicks(elapsedTicks % _totalTime.Ticks);
-            var targetFrame = _frameTimes.LastOrDefault(x => x <= timeModulus);
+            var targetFrame = _frameTimes.FirstOrDefault(x => timeModulus < x);
             var currentFrame = _frameTimes.IndexOf(targetFrame);
             if (currentFrame == -1) currentFrame = 0;
 

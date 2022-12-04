@@ -12,7 +12,7 @@ namespace AvaloniaGif.Test
 
         public ApprovalImageWriter(Bitmap image, object parameter)
         {
-            Data = image;
+            Data = image ?? throw new ArgumentNullException(nameof(image));
             Parameter = parameter?.ToString() ?? "null";
         }
 
