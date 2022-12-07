@@ -122,27 +122,6 @@ namespace AvaloniaGif.Decoding
             (1, 2)
         };
 
-        private static readonly Action<int, Action<int>> InterlaceRows = (height, rowAction) =>
-        {
-            for (var i = 0; i < 4; i++)
-            {
-                var curPass = Pass[i];
-                var y = curPass.Start;
-                while (y < height)
-                {
-                    rowAction(y);
-                    y += curPass.Step;
-                }
-            }
-        };
-
-        private static readonly Action<int, Action<int>> NormalRows = (height, rowAction) =>
-        {
-            for (var i = 0; i < height; i++)
-                rowAction(i);
-        };
-
-
         private void ClearImage()
         {
             Array.Fill(_bitmapBackBuffer, TransparentColor);
@@ -167,7 +146,7 @@ namespace AvaloniaGif.Decoding
                 ClearImage();
 
             DisposePreviousFrame();
-            
+
             _prevFrame++;
 
             // render intermediate frame
@@ -177,18 +156,21 @@ namespace AvaloniaGif.Decoding
 
                 if (prevFrame.FrameDisposalMethod == FrameDisposal.Restore)
                     continue;
-            
-                RenderFrameAt(idx, writeableBitmap);
 
                 if (prevFrame.FrameDisposalMethod == FrameDisposal.Background)
+                { 
                     ClearArea(prevFrame.Dimensions);
+                    continue;
+                }
+
+                RenderFrameAt(idx, writeableBitmap);
             }
 
             RenderFrameAt(fIndex, writeableBitmap);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void RenderFrameAt(int idx, WriteableBitmap writeableBitmap) 
+        private void RenderFrameAt(int idx, WriteableBitmap writeableBitmap)
         {
             var tmpB = ArrayPool<byte>.Shared.Rent(MaxTempBuf);
 
@@ -227,9 +209,23 @@ namespace AvaloniaGif.Decoding
             var hT = curFrame.HasTransparency;
 
             if (curFrame.IsInterlaced)
-                InterlaceRows(cH, DrawRow);
+            {
+                for (var i = 0; i < 4; i++)
+                {
+                    var curPass = Pass[i];
+                    var y = curPass.Start;
+                    while (y < cH)
+                    {
+                        DrawRow(y);
+                        y += curPass.Step;
+                    }
+                }
+            }
             else
-                NormalRows(cH, DrawRow);
+            {
+                for (var i = 0; i < cH; i++)
+                    DrawRow(i);
+            }
 
             //for (var row = 0; row < cH; row++)
             void DrawRow(int row)
@@ -617,7 +613,8 @@ namespace AvaloniaGif.Decoding
 
                     currentFrame.FrameDisposalMethod = (FrameDisposal)((packed & 0x1c) >> 2);
 
-                    if (currentFrame.FrameDisposalMethod != FrameDisposal.Restore)
+                    if (currentFrame.FrameDisposalMethod != FrameDisposal.Restore
+                        && currentFrame.FrameDisposalMethod != FrameDisposal.Background)
                         currentFrame.ShouldBackup = true;
 
                     currentFrame.HasTransparency = (packed & 1) != 0;

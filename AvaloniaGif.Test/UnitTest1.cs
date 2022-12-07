@@ -8,6 +8,7 @@ using System.Reflection;
 using UnitTest.Base.Apps;
 using UnitTest.Base.Utils;
 using UnitTest.Utils;
+using static ApprovalTests.Scrubber.PdfScrubber;
 
 namespace AvaloniaGif.Test
 {
@@ -31,6 +32,7 @@ namespace AvaloniaGif.Test
         [TestCase("all_none.gif")]
         [TestCase("firstnone_laterback.gif")]
         [TestCase("firstnone_laterprev.gif")]
+        [TestCase("jagging_back_prev.gif")]
         public void Sequencial(string filename)
         {
             var imageStream = Open(filename);
@@ -54,19 +56,22 @@ namespace AvaloniaGif.Test
         [TestCase("all_none.gif")]
         [TestCase("firstnone_laterback.gif")]
         [TestCase("firstnone_laterprev.gif")]
+        [TestCase("jagging_back_prev.gif")]
         public void Jump(string filename)
         {
             var imageStream = Open(filename);
             var imageInstance = new GifInstance(imageStream);
 
-            var indics = Concat(
-                Enumerable.Range(0, imageInstance.GifFrameCount).Where(i => i % 2 == 0),
-                Enumerable.Range(0, imageInstance.GifFrameCount).Where(i => i % 2 == 1),
+            var indics = new List<int>();
 
-                Enumerable.Range(0, imageInstance.GifFrameCount).Where(i => i % 3 == 0),
-                Enumerable.Range(0, imageInstance.GifFrameCount).Where(i => i % 3 == 1),
-                Enumerable.Range(0, imageInstance.GifFrameCount).Where(i => i % 3 == 2)
-            );
+            foreach (var step in Enumerable.Range(1, imageInstance.GifFrameCount))
+            {
+                indics.Add(0);
+
+                for (int start = 1; start < imageInstance.GifFrameCount; ++start)
+                    for (int idx = start; idx < imageInstance.GifFrameCount; idx += step)
+                        indics.Add(idx);
+            }
 
             foreach (int i in indics)
             {
@@ -124,14 +129,6 @@ namespace AvaloniaGif.Test
                     new DiffToolReporter(DiffEngine.DiffTool.WinMerge));
             }
         }
-
-        public static IEnumerable<T> Concat<T>(params IEnumerable<T>[] arrays)
-        {
-            foreach (var array in arrays)
-                foreach (var element in array)
-                    yield return element;
-        }
-
 
         public static Stream Open(string imagefilename)
         {
