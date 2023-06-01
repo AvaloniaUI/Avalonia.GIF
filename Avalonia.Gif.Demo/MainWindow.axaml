@@ -1,0 +1,23 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:gif="clr-namespace:Avalonia.Gif;assembly=Avalonia.Gif"
+        xmlns:demo="clr-namespace:Avalonia.Gif.Demo"
+        x:Class="Avalonia.Gif.Demo.MainWindow"
+        Title="GIFs on Avalonia!"
+        Height="480" Width="680"
+        x:CompileBindings="True"
+        x:DataType="demo:MainWindowViewModel"
+        Background="White">
+    <Grid ColumnDefinitions="2*, 3*">
+        <StackPanel Grid.Column="0">
+            <ComboBox SelectedItem="{Binding Path=Stretch}"
+                      ItemsSource="{Binding Path=Stretches}" />
+            <ListBox SelectedItem="{Binding Path=SelectedGif}"
+                     ItemsSource="{Binding Path=AvailableGifs}" />
+            <Button Command="{Binding HangUiThreadCommand}">Hang UI Thread for 5 seconds</Button>
+        </StackPanel>
+        <gif:GifImage Grid.Column="1" SourceUriRaw="{Binding Path=SelectedGif}" 
+                      Stretch="{Binding Path=Stretch}"
+                      StretchDirection="Both" />
+    </Grid>
+</Window>
