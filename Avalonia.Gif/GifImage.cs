@@ -192,7 +192,6 @@ namespace Avalonia.Gif
                 try
                 {
                     if (_currentInstance is null || _currentInstance.IsDisposed) return;
-                    drawingContext.FillRectangle(Brushes.Aqua, GetRenderBounds());
 
                     var bitmap = _currentInstance.ProcessFrameTime(_animationElapsed);
                     if (bitmap is not null)
