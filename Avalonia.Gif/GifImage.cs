@@ -35,6 +35,8 @@ namespace Avalonia.Gif
 
         private CompositionCustomVisual? _customVisual;
 
+        private object? _initialSource = null;
+
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
             switch (change.Property.Name)
@@ -114,6 +116,13 @@ namespace Avalonia.Gif
             _customVisual = compositor.CreateCustomVisual(new CustomVisualHandler());
             ElementComposition.SetElementChildVisual(this, _customVisual);
             _customVisual.SendHandlerMessage(CustomVisualHandler.StartMessage);
+
+            if (_initialSource is not null)
+            {
+                UpdateGifInstance(_initialSource);
+                _initialSource = null;
+            }
+
             Update();
             base.OnAttachedToVisualTree(e);
         }
@@ -239,19 +248,30 @@ namespace Avalonia.Gif
 
         private void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            if (e.NewValue is null || _customVisual is null)
+            if (e.NewValue is null || (e.NewValue is string value && !Uri.IsWellFormedUriString(value, UriKind.Absolute)))
             {
                 return;
             }
 
-            _gifInstance?.Dispose();
-            _gifInstance = new GifInstance(e.NewValue);
-            _gifInstance.IterationCount = IterationCount;
-            _customVisual.SendHandlerMessage(_gifInstance);
+            if (_customVisual is null)
+            {
+                _initialSource = e.NewValue;
+                return;
+            }
+
+            UpdateGifInstance(e.NewValue);
 
             InvalidateArrange();
             InvalidateMeasure();
             Update();
+        }
+
+        private void UpdateGifInstance(object source)
+        {
+            _gifInstance?.Dispose();
+            _gifInstance = new GifInstance(source);
+            _gifInstance.IterationCount = IterationCount;
+            _customVisual?.SendHandlerMessage(_gifInstance);
         }
     }
 }
