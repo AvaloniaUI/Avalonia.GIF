@@ -458,7 +458,8 @@ namespace AvaloniaGif.Decoding
                 Dimensions = _gifDimensions,
                 HasGlobalColorTable = _gctUsed,
                 // GlobalColorTableCacheID = _globalColorTable,
-                GlobarColorTable = ProcessColorTable(ref str, tmpB, _gctSize),
+                GlobarColorTable =
+                    _gctUsed ? ProcessColorTable(ref str, tmpB, _gctSize) : Array.Empty<GifColor>(),
                 GlobalColorTableSize = _gctSize,
                 BackgroundColorIndex = _bgIndex,
                 HeaderSize = _fileStream.Position
