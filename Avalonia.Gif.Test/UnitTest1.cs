@@ -15,15 +15,15 @@ namespace Avalonia.Gif.Test
     [UseReporter(typeof(DiffReporter))]
     public class UnitTest1
     {
-        IDisposable _disposable;
+        static UnitTest1()
+        {
+            AppBuilder.Configure<App>().UsePlatformDetect().SetupWithoutStarting();
+        }
 
         public UnitTest1()
         {
-            _disposable = App.Start();
-
             Approvals.RegisterDefaultApprover((w, n, c) => new ImageFileApprover(w, n, c));
         }
-
 
         [Test]
         [RunOnUi]
