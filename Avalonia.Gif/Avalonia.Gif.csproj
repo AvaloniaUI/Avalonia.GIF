@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<LangVersion>latest</LangVersion> 
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks> 
 		<Nullable>enable</Nullable>
@@ -9,7 +9,7 @@
     <InternalsVisibleTo Include="Avalonia.Gif.Test" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.0.0-rc1.1" />
+    <PackageReference Include="Avalonia" Version="11.0.7" />
   </ItemGroup>
 
 </Project>
