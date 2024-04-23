@@ -8,7 +8,6 @@ using Avalonia.Animation;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using AvaloniaGif.Decoding;
-using JetBrains.Annotations;
 
 namespace AvaloniaGif
 {
@@ -98,13 +97,13 @@ namespace AvaloniaGif
                 throw new InvalidDataException(
                     "The URI provided is not currently supported.");
 
-            var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
+            var assetLocator = AssetLoader.Open(uri);
 
-            if (assetLocator is null)
-                throw new InvalidDataException(
-                    "The resource URI was not found in the current assembly.");
+            // if (assetLocator is null)
+            //     throw new InvalidDataException(
+            //         "The resource URI was not found in the current assembly.");
 
-            return assetLocator.Open(uri);
+            return assetLocator;
         }
 
         public int GifFrameCount => _frameTimes.Count;
@@ -153,3 +152,6 @@ namespace AvaloniaGif
         }
     }
 }
+
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter | AttributeTargets.Property | AttributeTargets.Delegate | AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+public sealed class CanBeNullAttribute : Attribute { }
