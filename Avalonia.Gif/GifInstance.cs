@@ -67,16 +67,6 @@ namespace Avalonia.Gif
             }).ToList();
 
             _gifDecoder.RenderFrame(0, _targetBitmap);
-
-            // Save the color table cache ID's to refresh them on cache while
-            // // the image is either stopped/paused.
-            // _colorTableIdList = _gifDecoder.Frames
-            //     .Where(p => p.IsLocalColorTableUsed)
-            //     .Select(p => p.LocalColorTableCacheID)
-            //     .ToList();
-
-            // if (_gifDecoder.Header.HasGlobalColorTable)
-            //     _colorTableIdList.Add(_gifDecoder.Header.GlobalColorTableCacheID);
         }
 
         private static Stream GetStreamFromString(string str)
@@ -99,9 +89,9 @@ namespace Avalonia.Gif
 
             var assetLocator = AssetLoader.Open(uri);
 
-            // if (assetLocator is null)
-            //     throw new InvalidDataException(
-            //         "The resource URI was not found in the current assembly.");
+            if (assetLocator is null)
+                throw new InvalidDataException(
+                    "The resource URI was not found in the current assembly.");
 
             return assetLocator;
         }
@@ -128,9 +118,16 @@ namespace Avalonia.Gif
             {
                 return null;
             }
+            
+            var totalTicks = _totalTime.Ticks;
+
+            if (totalTicks == 0)
+            {
+                return ProcessFrameIndex(0);
+            }
 
             var elapsedTicks = stopwatchElapsed.Ticks;
-            var timeModulus = TimeSpan.FromTicks(elapsedTicks % _totalTime.Ticks);
+            var timeModulus = TimeSpan.FromTicks(elapsedTicks % totalTicks);
             var targetFrame = _frameTimes.FirstOrDefault(x => timeModulus < x);
             var currentFrame = _frameTimes.IndexOf(targetFrame);
             if (currentFrame == -1) currentFrame = 0;
@@ -138,7 +135,7 @@ namespace Avalonia.Gif
             if (_currentFrameIndex == currentFrame)
                 return _targetBitmap;
 
-            _iterationCount = (uint)(elapsedTicks / _totalTime.Ticks);
+            _iterationCount = (uint)(elapsedTicks / totalTicks);
 
             return ProcessFrameIndex(currentFrame);
         }
