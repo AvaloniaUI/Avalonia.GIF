@@ -1,20 +1,14 @@
 ﻿using ApprovalTests.Approvers;
 using ApprovalTests.Core;
 using ApprovalTests.Core.Exceptions;
-using Avalonia.Controls;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Text;
+using Avalonia;
 
 namespace UnitTest.Utils
 {
     public class ImageFileApprover : FileApprover
     {
-        public ImageFileApprover(IApprovalWriter writer, IApprovalNamer namer, bool normalizeLineEndingsForTextFiles = false)
+        public ImageFileApprover(IApprovalWriter writer, IApprovalNamer namer,
+            bool normalizeLineEndingsForTextFiles = false)
             : base(writer, namer, normalizeLineEndingsForTextFiles)
         {
         }
@@ -32,37 +26,31 @@ namespace UnitTest.Utils
             // FIXME: I have no idea to compare bitmap with Avalonia.Media.Imaging
             //        This logic use System.Drawing, So only run on Windows.
 
-            using var approvedImg = new Bitmap(approvedPath);
-            using var receivedImg = new Bitmap(receivedPath);
 
-            var approvedByte = BitmapToByte(approvedImg);
-            var receivedByte = BitmapToByte(receivedImg);
+            var approvedByte = GetImagePixels(approvedPath);
+            var receivedByte = GetImagePixels(receivedPath);
 
-            return !Compare(receivedByte, approvedByte) ?
-                    new ApprovalMismatchException(receivedPath, approvedPath) :
-                    null;
+            return !Compare(receivedByte, approvedByte)
+                ? new ApprovalMismatchException(receivedPath, approvedPath)
+                : null;
         }
 
-
-        private byte[] BitmapToByte(Bitmap bmp)
+        public unsafe byte[] GetImagePixels(string imagePath)
         {
-            var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-            var bDt = bmp.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            // Load the image
+            using var bitmap = new Avalonia.Media.Imaging.Bitmap(imagePath);
 
-            var bary = new byte[bmp.Width * bmp.Height * 3];
+            // Get the pixel data
+            var pixelSize = bitmap.PixelSize;
+            var pixels = new byte[pixelSize.Width * pixelSize.Height * 4]; // 4 bytes per pixel (RGBA)
 
-            var ptr = bDt.Scan0;
-            var lineLen = bmp.Width * 3;
-            for (int i = 0; i < bmp.Height; ++i)
-            {
-                Marshal.Copy(ptr, bary, i * lineLen, lineLen);
-                ptr += bDt.Stride;
-            }
+            // Copy the pixel data to our array
+            fixed (byte* ptr = &pixels[0])
+                bitmap.CopyPixels(new PixelRect(pixelSize), (IntPtr)ptr, pixels.Length, pixelSize.Width * 4);
 
-            bmp.UnlockBits(bDt);
-
-            return bary;
+            return pixels;
         }
+
 
         private new static bool Compare(ICollection<byte> bytes1, ICollection<byte> bytes2)
         {
