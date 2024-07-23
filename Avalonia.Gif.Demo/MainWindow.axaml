@@ -9,12 +9,13 @@
         x:DataType="demo:MainWindowViewModel"
         Background="White">
     <Grid ColumnDefinitions="2*, 3*">
-        <StackPanel Grid.Column="0">
-            <ComboBox SelectedItem="{Binding Stretch}"
+        <DockPanel Grid.Column="0" LastChildFill="True">
+            <ComboBox SelectedItem="{Binding Stretch}" DockPanel.Dock="Top"
                       ItemsSource="{Binding Stretches}" />
+            <Button Content="Hang UI (Thread.Sleep 5 sec)" Command="{Binding HangUiCommand}" DockPanel.Dock="Bottom"/>
             <ListBox SelectionMode="Single, AlwaysSelected" SelectedItem="{Binding SelectedGif}" 
                      ItemsSource="{Binding AvailableGifs}" />
-        </StackPanel>
+        </DockPanel>
         <gif:GifImage Grid.Column="1" SourceUri="{Binding SelectedGif}" 
                       Stretch="{Binding Stretch}"
                       StretchDirection="Both" />

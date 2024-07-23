@@ -99,9 +99,13 @@ namespace Avalonia.Gif
         public int GifFrameCount => _frameTimes.Count;
 
         public PixelSize GifPixelSize { get; }
+        public bool IsDisposed { get; set; }
 
         public void Dispose()
         {
+            if (IsDisposed) return;
+
+            IsDisposed = true;
             CurrentCts.Cancel();
             _targetBitmap?.Dispose();
         }

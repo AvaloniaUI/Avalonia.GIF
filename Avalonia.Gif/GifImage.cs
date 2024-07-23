@@ -1,20 +1,18 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
+using System.Numerics;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
+using Avalonia.Logging;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
-using Avalonia.Threading;
+using Avalonia.Rendering.Composition;
+using Avalonia.VisualTree;
 
 namespace Avalonia.Gif
 {
     public class GifImage : Control
     {
-        public static readonly StyledProperty<string> SourceUriRawProperty =
-            AvaloniaProperty.Register<GifImage, string>("SourceUriRaw");
-
         public static readonly StyledProperty<Uri> SourceUriProperty =
             AvaloniaProperty.Register<GifImage, Uri>("SourceUri");
 
@@ -24,10 +22,7 @@ namespace Avalonia.Gif
         public static readonly StyledProperty<IterationCount> IterationCountProperty =
             AvaloniaProperty.Register<GifImage, IterationCount>("IterationCount", IterationCount.Infinite);
 
-        private GifInstance gifInstance;
-
-        public static readonly StyledProperty<bool> AutoStartProperty =
-            AvaloniaProperty.Register<GifImage, bool>("AutoStart");
+        private GifInstance? _gifInstance;
 
         public static readonly StyledProperty<StretchDirection> StretchDirectionProperty =
             AvaloniaProperty.Register<GifImage, StretchDirection>("StretchDirection");
@@ -35,21 +30,33 @@ namespace Avalonia.Gif
         public static readonly StyledProperty<Stretch> StretchProperty =
             AvaloniaProperty.Register<GifImage, Stretch>("Stretch");
 
-        private RenderTargetBitmap? backingRTB;
-        private bool _hasNewSource;
-        private object? _newSource;
-        private Stopwatch _stopwatch;
+        private CompositionCustomVisual? _customVisual;
 
-        static GifImage()
+        private object? _initialSource;
+
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
-            SourceUriRawProperty.Changed.AddClassHandler<GifImage>(SourceChanged);
-            SourceUriProperty.Changed.AddClassHandler<GifImage>(SourceChanged);
-            SourceStreamProperty.Changed.AddClassHandler<GifImage>(SourceChanged);
-            IterationCountProperty.Changed.AddClassHandler<GifImage>(IterationCountChanged);
-            AutoStartProperty.Changed.AddClassHandler<GifImage>(AutoStartChanged);
-            AffectsRender<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty, StretchProperty);
-            AffectsArrange<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty, StretchProperty);
-            AffectsMeasure<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty, StretchProperty);
+            switch (change.Property.Name)
+            {
+                case nameof(SourceUri):
+                case nameof(SourceStream):
+                    SourceChanged(change);
+                    break;
+                case nameof(Stretch):
+                case nameof(StretchDirection):
+                    InvalidateArrange();
+                    InvalidateMeasure();
+                    Update();
+                    break;
+                case nameof(IterationCount):
+                    IterationCountChanged(change);
+                    break;
+                case nameof(Bounds):
+                    Update();
+                    break;
+            }
+
+            base.OnPropertyChanged(change);
         }
 
         public Uri SourceUri
@@ -70,12 +77,6 @@ namespace Avalonia.Gif
             set => SetValue(IterationCountProperty, value);
         }
 
-        public bool AutoStart
-        {
-            get => GetValue(AutoStartProperty);
-            set => SetValue(AutoStartProperty, value);
-        }
-
         public StretchDirection StretchDirection
         {
             get => GetValue(StretchDirectionProperty);
@@ -88,75 +89,60 @@ namespace Avalonia.Gif
             set => SetValue(StretchProperty, value);
         }
 
-        private static void AutoStartChanged(GifImage? image, AvaloniaPropertyChangedEventArgs e)
+        private static void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
         {
+            var image = e.Sender as GifImage;
+            if (image is null || e.NewValue is not IterationCount iterationCount)
+                return;
+
+            image.IterationCount = iterationCount;
         }
 
-        private static void IterationCountChanged(GifImage? image, AvaloniaPropertyChangedEventArgs e)
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
-            if (e.NewValue is not IterationCount iterationCount)
+            var compositor = ElementComposition.GetElementVisual(this)?.Compositor;
+            if (compositor == null || _customVisual?.Compositor == compositor)
                 return;
+            _customVisual = compositor.CreateCustomVisual(new GifCustomVisualHandler());
+            ElementComposition.SetElementChildVisual(this, _customVisual);
+            _customVisual.SendHandlerMessage(GifCustomVisualHandler.StartMessage);
 
-            if (image != null) image.IterationCount = iterationCount;
+            if (_initialSource is not null)
+            {
+                UpdateGifInstance(_initialSource);
+                _initialSource = null;
+            }
+
+            Update();
+            base.OnAttachedToVisualTree(e);
         }
 
-        public override void Render(DrawingContext context)
+
+        private void Update()
         {
-            Dispatcher.UIThread.Post(InvalidateMeasure, DispatcherPriority.Background);
-            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
-
-            if (_hasNewSource)
-            {
-                StopAndDispose();
-                gifInstance = new GifInstance(_newSource);
-                gifInstance.IterationCount = IterationCount;
-                backingRTB = new RenderTargetBitmap(gifInstance.GifPixelSize, new Vector(96, 96));
-                _hasNewSource = false;
-
-                _stopwatch ??= new Stopwatch();
-                _stopwatch.Reset();
-
-
+            if (_customVisual is null || _gifInstance is null)
                 return;
-            }
 
-            if (gifInstance is null || (gifInstance.CurrentCts?.IsCancellationRequested ?? true))
+            var dpi = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+            var sourceSize = _gifInstance.GifPixelSize.ToSize(dpi);
+            var viewPort = new Rect(Bounds.Size);
+
+            var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
+            var scaledSize = sourceSize * scale;
+            var destRect = viewPort
+                .CenterRect(new Rect(scaledSize))
+                .Intersect(viewPort);
+
+            if (Stretch == Stretch.None)
             {
-                return;
+                _customVisual.Size = new Vector2((float)sourceSize.Width, (float)sourceSize.Height);
             }
-
-            if (!_stopwatch.IsRunning)
+            else
             {
-                _stopwatch.Start();
+                _customVisual.Size = new Vector2((float)destRect.Size.Width, (float)destRect.Size.Height);
             }
 
-            var currentFrame = gifInstance.ProcessFrameTime(_stopwatch.Elapsed);
-
-            if (currentFrame != null)
-            {
-                using var ctx = backingRTB.CreateDrawingContext();
-                var ts = new Rect(currentFrame.Size);
-                ctx.DrawImage(currentFrame, ts, ts);
-            }
-
-            if (backingRTB is not null && Bounds.Width > 0 && Bounds.Height > 0)
-            {
-                var viewPort = new Rect(Bounds.Size);
-                var sourceSize = backingRTB.Size;
-
-                var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
-                var scaledSize = sourceSize * scale;
-                var destRect = viewPort
-                    .CenterRect(new Rect(scaledSize))
-                    .Intersect(viewPort);
-
-                var sourceRect = new Rect(sourceSize)
-                    .CenterRect(new Rect(destRect.Size / scale));
-
-                var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
-
-                context.DrawImage(backingRTB, sourceRect, destRect);
-            }
+            _customVisual.Offset = new Vector3((float)destRect.Position.X, (float)destRect.Position.Y, 0);
         }
 
         /// <summary>
@@ -166,12 +152,12 @@ namespace Avalonia.Gif
         /// <returns>The desired size of the control.</returns>
         protected override Size MeasureOverride(Size availableSize)
         {
-            var source = backingRTB;
             var result = new Size();
-
-            if (source != null)
+            var scaling = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+            if (_gifInstance != null)
             {
-                result = Stretch.CalculateSize(availableSize, source.Size, StretchDirection);
+                result = Stretch.CalculateSize(availableSize, _gifInstance.GifPixelSize.ToSize(scaling),
+                    StretchDirection);
             }
 
             return result;
@@ -180,34 +166,102 @@ namespace Avalonia.Gif
         /// <inheritdoc/>
         protected override Size ArrangeOverride(Size finalSize)
         {
-            var source = backingRTB;
-
-            if (source == null) return new Size();
-            
-            var sourceSize = source.Size;
+            if (_gifInstance is null) return new Size();
+            var scaling = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+            var sourceSize = _gifInstance.GifPixelSize.ToSize(scaling);
             var result = Stretch.CalculateSize(finalSize, sourceSize);
             return result;
         }
 
-        public void StopAndDispose()
-        {
-            gifInstance?.Dispose();
-            backingRTB?.Dispose();
-        }
 
-        private static void SourceChanged(GifImage image, AvaloniaPropertyChangedEventArgs e)
+        private void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            if (image == null)
-                return;
-
-            if (e.NewValue is null)
+            if (e.NewValue is null ||
+                (e.NewValue is string value && !Uri.IsWellFormedUriString(value, UriKind.Absolute)))
             {
                 return;
             }
 
-            image._hasNewSource = true;
-            image._newSource = e.NewValue;
-            Dispatcher.UIThread.Post(image.InvalidateVisual, DispatcherPriority.Background);
+            if (_customVisual is null)
+            {
+                _initialSource = e.NewValue;
+                return;
+            }
+
+            UpdateGifInstance(e.NewValue);
+
+            InvalidateArrange();
+            InvalidateMeasure();
+            Update();
+        }
+
+        private void UpdateGifInstance(object source)
+        {
+            _gifInstance?.Dispose();
+            _gifInstance = new GifInstance(source);
+            _gifInstance.IterationCount = IterationCount;
+            _customVisual?.SendHandlerMessage(_gifInstance);
+        }
+    }
+
+    internal class GifCustomVisualHandler : CompositionCustomVisualHandler
+    {
+        private TimeSpan _animationElapsed;
+        private TimeSpan? _lastServerTime;
+        private GifInstance? _currentInstance;
+        private bool _running;
+
+        public static readonly object StopMessage = new(), StartMessage = new();
+
+        public override void OnMessage(object message)
+        {
+            if (message == StartMessage)
+            {
+                _running = true;
+                _lastServerTime = null;
+                RegisterForNextAnimationFrameUpdate();
+            }
+            else if (message == StopMessage)
+            {
+                _running = false;
+            }
+            else if (message is GifInstance instance)
+            {
+                _currentInstance?.Dispose();
+                _currentInstance = instance;
+            }
+        }
+
+        public override void OnAnimationFrameUpdate()
+        {
+            if (!_running) return;
+            Invalidate();
+            RegisterForNextAnimationFrameUpdate();
+        }
+
+        public override void OnRender(ImmediateDrawingContext drawingContext)
+        {
+            if (_running)
+            {
+                if (_lastServerTime.HasValue) _animationElapsed += (CompositionNow - _lastServerTime.Value);
+                _lastServerTime = CompositionNow;
+            }
+
+            try
+            {
+                if (_currentInstance is null || _currentInstance.IsDisposed) return;
+
+                var bitmap = _currentInstance.ProcessFrameTime(_animationElapsed);
+                if (bitmap is not null)
+                {
+                    drawingContext.DrawBitmap(bitmap, new Rect(_currentInstance.GifPixelSize.ToSize(1)),
+                        GetRenderBounds());
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Sink?.Log(LogEventLevel.Error, "GifImage Renderer ", this, e.ToString());
+            }
         }
     }
 }

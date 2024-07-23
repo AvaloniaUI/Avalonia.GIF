@@ -1,4 +1,4 @@
-using Avalonia; 
+using Avalonia;
 
 namespace Avalonia.Gif.Demo
 {
@@ -8,7 +8,11 @@ namespace Avalonia.Gif.Demo
 
         public static AppBuilder BuildAvaloniaApp()
             => AppBuilder.Configure<App>()
-                .UsePlatformDetect() 
+                .With(new AvaloniaNativePlatformOptions()
+                {
+                    RenderingMode = [AvaloniaNativeRenderingMode.Metal, AvaloniaNativeRenderingMode.Software]
+                })
+                .UsePlatformDetect()
                 .LogToTrace();
     }
 }
