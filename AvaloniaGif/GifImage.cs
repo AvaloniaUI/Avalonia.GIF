@@ -42,15 +42,16 @@ namespace AvaloniaGif
 
         static GifImage()
         {
-            SourceUriRawProperty.Changed.Subscribe(SourceChanged);
-            SourceUriProperty.Changed.Subscribe(SourceChanged);
-            SourceStreamProperty.Changed.Subscribe(SourceChanged);
-            IterationCountProperty.Changed.Subscribe(IterationCountChanged);
-            AutoStartProperty.Changed.Subscribe(AutoStartChanged);
+            SourceUriRawProperty.Changed.AddClassHandler<GifImage>(SourceChanged);
+            SourceUriProperty.Changed.AddClassHandler<GifImage>(SourceChanged);
+            SourceStreamProperty.Changed.AddClassHandler<GifImage>(SourceChanged);
+            IterationCountProperty.Changed.AddClassHandler<GifImage>(IterationCountChanged);
+            AutoStartProperty.Changed.AddClassHandler<GifImage>(AutoStartChanged);
             AffectsRender<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty, StretchProperty);
             AffectsArrange<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty, StretchProperty);
             AffectsMeasure<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty, StretchProperty);
         }
+
 
         public string SourceUriRaw
         {
@@ -94,17 +95,15 @@ namespace AvaloniaGif
             set => SetValue(StretchProperty, value);
         }
 
-        private static void AutoStartChanged(AvaloniaPropertyChangedEventArgs e)
-        {
-            var image = e.Sender as GifImage;
+        private static void AutoStartChanged(GifImage image, AvaloniaPropertyChangedEventArgs e)
+        { 
             if (image == null)
                 return;
         }
 
-        private static void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
+        private static void IterationCountChanged(GifImage image, AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as GifImage;
-            if (image is null || e.NewValue is not IterationCount iterationCount)
+            if (e.NewValue is not IterationCount iterationCount)
                 return;
 
             image.IterationCount = iterationCount;
@@ -209,10 +208,8 @@ namespace AvaloniaGif
             backingRTB?.Dispose();
         }
 
-        private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
-        {
-            var image = e.Sender as GifImage;
-
+        private static void SourceChanged(GifImage image, AvaloniaPropertyChangedEventArgs e)
+        { 
             if (image == null)
                 return;
 

@@ -1,6 +1,6 @@
-﻿<Application xmlns="https://github.com/avaloniaui"
+<Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
-             x:Class="UnitTest.Base.Apps.App"
+             x:Class="AvaloniaGif.Demo.App"
              RequestedThemeVariant="{x:Static ThemeVariant.Light}">
     <Application.Styles>
         <FluentTheme/> 

@@ -1,5 +1,4 @@
-using Avalonia;
-using Avalonia.ReactiveUI;
+using Avalonia; 
 
 namespace AvaloniaGif.Demo
 {
@@ -9,8 +8,7 @@ namespace AvaloniaGif.Demo
 
         public static AppBuilder BuildAvaloniaApp()
             => AppBuilder.Configure<App>()
-                .UsePlatformDetect()
-                .UseReactiveUI()
+                .UsePlatformDetect() 
                 .LogToTrace();
     }
 }

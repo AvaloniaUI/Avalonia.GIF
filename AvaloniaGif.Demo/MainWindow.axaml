@@ -10,13 +10,13 @@
         Background="White">
     <Grid ColumnDefinitions="2*, 3*">
         <StackPanel Grid.Column="0">
-            <ComboBox SelectedItem="{Binding Path=Stretch}"
-                      Items="{Binding Path=Stretches}" />
-            <ListBox SelectedItem="{Binding Path=SelectedGif}"
-                     Items="{Binding Path=AvailableGifs}" />
+            <ComboBox SelectedItem="{Binding Stretch}"
+                      ItemsSource="{Binding Stretches}" />
+            <ListBox SelectionMode="Single, AlwaysSelected" SelectedItem="{Binding SelectedGif, Mode=OneWayToSource}" 
+                     ItemsSource="{Binding AvailableGifs}" />
         </StackPanel>
-        <gif:GifImage Grid.Column="1" SourceUriRaw="{Binding Path=SelectedGif}" 
-                      Stretch="{Binding Path=Stretch}"
+        <gif:GifImage Grid.Column="1" SourceUriRaw="{Binding SelectedGif}" 
+                      Stretch="{Binding Stretch}"
                       StretchDirection="Both" />
     </Grid>
 </Window>
