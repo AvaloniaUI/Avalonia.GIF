@@ -1,13 +1,11 @@
 ﻿using Avalonia.Controls;
-using Avalonia.Markup.Xaml; 
 
-namespace Avalonia.Gif.Demo
+namespace Avalonia.Gif.Demo;
+
+public partial class MainWindow : Window
 {
-    public partial class MainWindow : Window
+    public MainWindow()
     {
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

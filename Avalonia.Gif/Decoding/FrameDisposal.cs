@@ -1,10 +1,9 @@
-namespace Avalonia.Gif.Decoding
+namespace Avalonia.Gif.Decoding;
+
+public enum FrameDisposal
 {
-    public enum FrameDisposal
-    {
-        Unknown = 0,
-        Leave = 1,
-        Background = 2,
-        Restore = 3
-    }
+    Unknown = 0,
+    Leave = 1,
+    Background = 2,
+    Restore = 3
 }
