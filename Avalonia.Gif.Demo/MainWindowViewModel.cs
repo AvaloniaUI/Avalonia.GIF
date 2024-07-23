@@ -25,7 +25,7 @@ namespace Avalonia.Gif.Demo
         }
 
         [ObservableProperty] private IReadOnlyList<Uri> _availableGifs;
-        [ObservableProperty] private string _selectedGif;
+        [ObservableProperty] private Uri _selectedGif;
         [ObservableProperty] private IReadOnlyList<Stretch> _stretches;
         [ObservableProperty] private Stretch _stretch = Stretch.None;
     }

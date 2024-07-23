@@ -107,7 +107,7 @@ namespace Avalonia.Gif
         }
 
         [CanBeNull]
-        public WriteableBitmap ProcessFrameTime(TimeSpan stopwatchElapsed)
+        public WriteableBitmap? ProcessFrameTime(TimeSpan elapsed)
         {
             if (!IterationCount.IsInfinite && _iterationCount > IterationCount.Value)
             {
@@ -126,7 +126,7 @@ namespace Avalonia.Gif
                 return ProcessFrameIndex(0);
             }
 
-            var elapsedTicks = stopwatchElapsed.Ticks;
+            var elapsedTicks = elapsed.Ticks;
             var timeModulus = TimeSpan.FromTicks(elapsedTicks % totalTicks);
             var targetFrame = _frameTimes.FirstOrDefault(x => timeModulus < x);
             var currentFrame = _frameTimes.IndexOf(targetFrame);

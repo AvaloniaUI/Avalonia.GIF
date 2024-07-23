@@ -12,10 +12,10 @@
         <StackPanel Grid.Column="0">
             <ComboBox SelectedItem="{Binding Stretch}"
                       ItemsSource="{Binding Stretches}" />
-            <ListBox SelectionMode="Single, AlwaysSelected" SelectedItem="{Binding SelectedGif, Mode=OneWayToSource}" 
+            <ListBox SelectionMode="Single, AlwaysSelected" SelectedItem="{Binding SelectedGif}" 
                      ItemsSource="{Binding AvailableGifs}" />
         </StackPanel>
-        <gif:GifImage Grid.Column="1" SourceUriRaw="{Binding SelectedGif}" 
+        <gif:GifImage Grid.Column="1" SourceUri="{Binding SelectedGif}" 
                       Stretch="{Binding Stretch}"
                       StretchDirection="Both" />
     </Grid>
