@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvaloniaGif", "AvaloniaGif\AvaloniaGif.csproj", "{80369856-5FC2-4ABE-B87B-BF24732AFF53}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Avalonia.Gif", "Avalonia.Gif\Avalonia.Gif.csproj", "{80369856-5FC2-4ABE-B87B-BF24732AFF53}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvaloniaGif.Demo", "AvaloniaGif.Demo\AvaloniaGif.Demo.csproj", "{4593C17D-E403-4852-94A1-C7D406BA72B7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Avalonia.Gif.Demo", "Avalonia.Gif.Demo\Avalonia.Gif.Demo.csproj", "{4593C17D-E403-4852-94A1-C7D406BA72B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaloniaGif.Test", "AvaloniaGif.Test\AvaloniaGif.Test.csproj", "{02AD63EA-5CC1-4B46-A1B2-E94373ED92A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Avalonia.Gif.Test", "Avalonia.Gif.Test\Avalonia.Gif.Test.csproj", "{02AD63EA-5CC1-4B46-A1B2-E94373ED92A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
