@@ -14,10 +14,10 @@
     <AvaloniaResource Include="**\*.gif" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.1.0" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.0" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.1.0" /> 
+    <PackageReference Include="Avalonia" Version="11.1.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.3" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.1.3" /> 
     <ProjectReference Include="..\Avalonia.Gif\Avalonia.Gif.csproj" />
   </ItemGroup>
 </Project>
